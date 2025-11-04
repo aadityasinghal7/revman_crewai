@@ -1,0 +1,105 @@
+write_highlights_content:
+  description: |
+    Transform the categorized price change data into the standard "Highlights" email format.
+
+    REQUIRED STRUCTURE:
+    1. Title: "Highlights (Price Before Tax and Deposit)"
+    2. For each Brewer (LABATT, MOLSON, SLEEMAN, etc.):
+       - Brewer name as header
+       - "Begin LTO" section with price decreases
+       - "End LTO" section with price increases
+       - "End LTO & Perm Change" section (if applicable)
+       - "Permanent Changes" section (if applicable)
+       - Empty line between brewers
+
+    FORMAT EACH LINE:
+    Product PackSize +/-$Amount to $FinalPrice (optional context)
+
+    Examples:
+    - "Budweiser 30C -$5.50 to $45.99 (increased depth as a competitive response)"
+    - "Bud Light Lemon Lime 12C +$2 to $29.99 (end SCO mitigation)"
+    - "Corona 24B +$3 to $50.69"
+
+    BUSINESS CONTEXT:
+    Add context where appropriate explaining WHY the change is happening:
+    - "increased depth as a competitive response"
+    - "end SCO mitigation"
+    - Value positioning references (e.g., "Labatt Value at $23.49")
+    - Competitive benchmarking (e.g., "Ultra at $58.99")
+
+  expected_output: |
+    Structured plain text content ready for email formatting:
+
+    Highlights (Price Before Tax and Deposit)
+
+    LABATT
+    Begin LTO
+    Product lines...
+
+    End LTO
+    Product lines...
+
+    Permanent Changes
+    Product lines...
+
+    MOLSON
+    Begin LTO
+    Product lines...
+    ...
+
+    The output should be:
+    - Professional business tone with strategic rationale
+    - Plain text format (not HTML yet)
+    - Properly organized by brewer and change type
+    - Each product line correctly formatted
+
+  agent: email_content_writer_agent
+
+format_as_html_email:
+  description: |
+    Convert the highlights text content into a clean, professional HTML email.
+
+    REQUIREMENTS:
+    - Simple, readable HTML structure (not complex tables)
+    - Use clean typography and spacing
+    - Style brewer names as bold headers (larger font, bold)
+    - Style section headers (Begin LTO, End LTO, etc.) as subheaders (bold, medium size)
+    - Indent product lines for readability
+    - Use appropriate colors:
+      * GREEN (#28a745) for price decreases (Begin LTO items)
+      * RED (#dc3545) for price increases (End LTO items)
+      * BLUE (#0066cc) for Permanent Changes
+    - Add professional email header with title
+    - Add clean footer with timestamp and disclaimer
+    - Ensure mobile-responsive design
+    - Compatible with all major email clients (use inline CSS only)
+    - Proper HTML structure with DOCTYPE and meta tags
+
+    TRIGGER DATE: {trigger_date}
+
+  expected_output: |
+    Complete HTML email package with:
+
+    1. HTML Content:
+       - Valid HTML5 structure with proper DOCTYPE
+       - Inline CSS styling (no external stylesheets)
+       - Professional header with title
+       - Formatted brewer sections with proper hierarchy
+       - Color-coded price changes (green/red/blue)
+       - Clean spacing and readability
+       - Professional footer with date and disclaimers
+       - Mobile-responsive meta tags
+
+    2. Email Subject Line:
+       "TBS Price Change Summary - [Date]"
+
+    3. Metadata:
+       - Email content type: text/html
+       - Character encoding: UTF-8
+       - Viewport settings for mobile
+
+    The HTML should render beautifully in Gmail, Outlook, Apple Mail, and other major clients.
+
+  agent: html_email_formatter_agent
+  context:
+    - write_highlights_content

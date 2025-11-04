@@ -1,0 +1,11 @@
+.env
+__pycache__/
+lib/
+.DS_Store
+
+# Data folders
+data/input/*         # Ignore input Excel files (may contain sensitive pricing data)
+!data/input/.gitkeep # But keep the folder structure
+data/output/*        # Ignore generated emails
+!data/output/.gitkeep # But keep the folder structure
+# data/templates/ is committed (reference files)

@@ -1,0 +1,143 @@
+parse_excel_file:
+  description: |
+    Parse the Excel file at {excel_file_path} and extract all price change records.
+
+    INSTRUCTIONS:
+    - Skip the first 6 header rows (data starts at row 7)
+    - Extract all columns including:
+      * SAP Art. No. (Article Number)
+      * Type of Sale
+      * Brewer
+      * Product Name
+      * Pack Type (Bottles/Cans)
+      * Pack Volume (ml)
+      * Package Full Name
+      * Pack Size
+      * Old Price
+      * New Price
+      * Increase/(Decrease)
+    - Handle data type conversions (numbers, text, dates)
+    - Clean any formatting issues or special characters
+    - Remove rows with all null values
+    - Return structured data with all records
+
+  expected_output: |
+    A comprehensive data structure containing:
+    - List of all product records with complete column data
+    - Each record as a dictionary with keys: sap_article_no, type_of_sale, brewer,
+      product_name, pack_type, pack_volume_ml, package_full_name, pack_size,
+      old_price, new_price, price_change
+    - Metadata: total_record_count, columns_found, parsing_timestamp
+    - Any parsing warnings or issues encountered
+
+  agent: excel_parser_agent
+
+analyze_price_changes:
+  description: |
+    Analyze and categorize price change data for highlights email based on the actual template structure.
+
+    PRIMARY CATEGORIZATION:
+    1. Group all products by Brewer (e.g., LABATT, MOLSON, SLEEMAN)
+    2. Within each brewer, categorize changes by type:
+       - "Begin LTO" - Price DECREASES indicating start of Limited Time Offers
+       - "End LTO" - Price INCREASES indicating end of Limited Time Offers
+       - "End LTO & Perm Change" - Combined LTO ending with permanent adjustment
+       - "Permanent Changes" - Ongoing price adjustments (small changes, typically < $1)
+
+    FOR EACH PRODUCT:
+    - Calculate price change amount (+ for increase, - for decrease)
+    - Determine final price (New Price)
+    - Identify business context when applicable:
+      * "increased depth as a competitive response" (large decreases)
+      * "end SCO mitigation" (price increases after promotion)
+      * Value positioning (e.g., "Labatt Value at $23.49")
+      * Competitive benchmarking (e.g., "Ultra at $58.99")
+    - Format as: "Product Name PackSize +/-$X.XX to $YY.YY (optional context)"
+
+    INTELLIGENT FILTERING:
+    - Focus on highlights only (significant changes, strategic moves)
+    - Prioritize larger changes (> $2) for inclusion
+    - Include strategic price points and competitive responses
+    - Not all products need to be included - curate based on business importance
+
+  expected_output: |
+    Structured categorization dictionary with format:
+    {{
+      "LABATT": {{
+        "Begin LTO": [
+          "Budweiser 30C -$5.50 to $45.99 (increased depth as a competitive response)",
+          "MSO 24C -$4 to $44.99",
+          ...
+        ],
+        "End LTO": [
+          "Bud Light Lemon Lime 12C +$2 to $29.99 (end SCO mitigation)",
+          ...
+        ],
+        "Permanent Changes": [
+          "Bud Light 28B -$0.50 to $43.49",
+          ...
+        ]
+      }},
+      "MOLSON": {{
+        "Begin LTO": [...],
+        "End LTO": [...],
+        ...
+      }},
+      ...
+    }}
+
+    Each entry should be:
+    - Properly formatted with product name, pack size, price change, final price
+    - Include business context where strategic value is clear
+    - Only include notable/significant changes (highlights)
+    - Ready for direct insertion into email template
+
+  agent: data_analyst_agent
+  context:
+    - parse_excel_file
+
+validate_data_quality:
+  description: |
+    Validate data quality and integrity before finalizing the price change categorization.
+
+    VALIDATION CHECKS:
+    1. Data Completeness:
+       - Check for missing required fields (product name, prices, brewer)
+       - Verify all categorized products have complete information
+       - Flag any records with null or invalid values
+
+    2. Calculation Accuracy:
+       - Verify: Old Price - New Price = Change amount
+       - Check that "Begin LTO" entries have negative changes (decreases)
+       - Check that "End LTO" entries have positive changes (increases)
+       - Validate price values are positive numbers
+
+    3. Data Quality:
+       - Identify any outliers (unusually large changes > $20)
+       - Check for duplicate entries
+       - Verify brewer names are consistent
+       - Ensure pack size formats are valid
+
+    4. Business Rules:
+       - Confirm LTO categorization makes sense
+       - Verify business context is appropriate
+       - Check that highlights are truly significant
+
+  expected_output: |
+    Validation report with:
+    - Overall validation status: PASS or FAIL
+    - Detailed findings:
+      * Number of records validated
+      * Number of errors found (critical issues)
+      * Number of warnings (minor issues)
+      * List of specific issues with record details
+    - Data quality score (0-100)
+    - Recommendations for any corrections needed
+    - Summary of what passed validation
+
+    If critical errors exist, clearly flag them for attention.
+
+  agent: data_validator_agent
+  context:
+    - parse_excel_file
+    - analyze_price_changes

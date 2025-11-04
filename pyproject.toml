@@ -1,0 +1,22 @@
+[project]
+name = "revman"
+version = "0.1.0"
+description = "revman using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[tools]==1.2.0"
+]
+
+[project.scripts]
+kickoff = "revman.main:kickoff"
+run_crew = "revman.main:kickoff"
+plot = "revman.main:plot"
+run_with_trigger = "revman.main:run_with_trigger"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "flow"
