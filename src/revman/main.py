@@ -57,6 +57,10 @@ class RevManFlow(Flow[RevManFlowState]):
     4. Output saving
     """
 
+    def __init__(self):
+        """Initialize the flow with tracing enabled"""
+        super().__init__(tracing=True)
+
     @start()
     def trigger_flow(self, crewai_trigger_payload: dict = None):
         """
