@@ -1,0 +1,8 @@
+{
+  "subject": "TBS Price Change Summary - November 05, 2025",
+  "generated_at": "2025-11-05T12:12:25.881027",
+  "trigger_date": "2025-11-05T12:10:54.930389",
+  "input_file": "data\\input\\TBS Price Change Summary Report - October 13th'25.xlsx",
+  "validation_passed": true,
+  "recipients": []
+}

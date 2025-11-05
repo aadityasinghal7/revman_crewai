@@ -1,0 +1,13 @@
+{
+  "validation_status": "PASS WITH WARNINGS",
+  "quality_score": 75,
+  "critical_issues": [],
+  "warnings": [
+    "Missing DOCTYPE declaration"
+  ],
+  "html_length": 9442,
+  "subject_line_length": 44,
+  "has_inline_css": true,
+  "is_mobile_responsive": true,
+  "summary": "Validation PASS WITH WARNINGS. Found 0 critical issues and 1 warnings."
+}
