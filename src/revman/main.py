@@ -303,7 +303,7 @@ class RevManFlow(Flow[RevManFlowState]):
 
 def kickoff():
     """Run the RevMan flow"""
-    flow = RevManFlow()
+    flow = RevManFlow(tracing=True)
     flow.kickoff()
 
 
