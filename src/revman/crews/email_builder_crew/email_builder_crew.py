@@ -1,4 +1,4 @@
-from crewai import Agent, Crew, Process, Task
+from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
 
@@ -13,6 +13,7 @@ class EmailBuilderCrew:
     def email_content_writer_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["email_content_writer_agent"],
+            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
             verbose=True,
         )
 
@@ -20,6 +21,7 @@ class EmailBuilderCrew:
     def html_email_formatter_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["html_email_formatter_agent"],
+            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
             verbose=True,
         )
 
@@ -42,5 +44,5 @@ class EmailBuilderCrew:
             agents=self.agents,  # Automatically includes all @agent decorated methods
             tasks=self.tasks,  # Automatically includes all @task decorated methods
             process=Process.sequential,
-            verbose=True,
+            verbose=False,
         )

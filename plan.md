@@ -670,7 +670,7 @@ revman/                                  # Project root (standard Python project
 ### Environment Variables (.env)
 ```bash
 # Existing
-OPENAI_API_KEY=your_openai_key_here
+ANTHROPIC_API_KEY=your_anthropic_key_here
 
 # Data directory configuration (relative to project root: revman/)
 REVMAN_INPUT_DIR=./data/input      # ✅ All Excel files stored here
@@ -872,7 +872,7 @@ data/output/
 | Data quality issues | Medium | Comprehensive validation; error reporting |
 | HTML rendering issues | Medium | Test across email clients; use email-safe HTML |
 | Long execution times | Low | Add timeouts; monitor performance; optimize tools |
-| API rate limits (OpenAI) | Medium | Implement retry logic; use efficient prompts |
+| API rate limits (Anthropic) | Medium | Implement retry logic; use efficient prompts |
 
 ### Operational Risks
 | Risk | Impact | Mitigation |

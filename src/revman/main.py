@@ -18,6 +18,15 @@ from revman.crews.excel_processor_crew import ExcelProcessorCrew
 from revman.crews.email_builder_crew import EmailBuilderCrew
 from revman.tools import EmailValidatorTool
 
+# Define file paths using relative path from main.py
+# main.py is at: revman/src/revman/main.py
+# project_root is at: revman/
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DATA_DIR = Path(os.getenv('REVMAN_DATA_DIR', PROJECT_ROOT / "data"))
+INPUT_DIR = Path(os.getenv('REVMAN_INPUT_DIR', DATA_DIR / "input"))
+OUTPUT_DIR = Path(os.getenv('REVMAN_OUTPUT_DIR', DATA_DIR / "output"))
+TEMPLATE_DIR = Path(os.getenv('REVMAN_TEMPLATE_DIR', DATA_DIR / "templates"))
+
 
 class RevManFlowState(BaseModel):
     """State model for RevMan Price Change Flow"""
@@ -57,10 +66,6 @@ class RevManFlow(Flow[RevManFlowState]):
     4. Output saving
     """
 
-    def __init__(self):
-        """Initialize the flow with tracing enabled"""
-        super().__init__(tracing=True)
-
     @start()
     def trigger_flow(self, crewai_trigger_payload: dict = None):
         """
@@ -77,7 +82,7 @@ class RevManFlow(Flow[RevManFlowState]):
             # Use trigger payload
             self.state.excel_file_path = crewai_trigger_payload.get(
                 "excel_file_path",
-                os.getenv("REVMAN_INPUT_DIR", "./data/input") + "/TBS Price Change Summary Report - October 13th'25.xlsx"
+                str(INPUT_DIR / "TBS Price Change Summary Report - October 13th'25.xlsx")
             )
             trigger_date_str = crewai_trigger_payload.get("trigger_date")
             if trigger_date_str:
@@ -90,8 +95,7 @@ class RevManFlow(Flow[RevManFlowState]):
             print(f"  Date: {self.state.trigger_date}")
         else:
             # Default: use sample file from data/input
-            input_dir = os.getenv("REVMAN_INPUT_DIR", "./data/input")
-            self.state.excel_file_path = str(Path(input_dir) / "TBS Price Change Summary Report - October 13th'25.xlsx")
+            self.state.excel_file_path = str(INPUT_DIR / "TBS Price Change Summary Report - October 13th'25.xlsx")
             print(f"[OK] Using default file: {self.state.excel_file_path}")
 
         # Validate input file exists
@@ -253,15 +257,14 @@ class RevManFlow(Flow[RevManFlowState]):
 
         try:
             # Get output directory
-            output_dir = Path(os.getenv("REVMAN_OUTPUT_DIR", "./data/output"))
-            output_dir.mkdir(parents=True, exist_ok=True)
+            OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
             # Generate filename with timestamp
             timestamp = self.state.trigger_date.strftime("%Y-%m-%d")
             base_filename = f"price_change_email_{timestamp}"
 
             # Save HTML email
-            html_path = output_dir / f"{base_filename}.html"
+            html_path = OUTPUT_DIR / f"{base_filename}.html"
             with open(html_path, 'w', encoding='utf-8') as f:
                 f.write(self.state.email_html)
             print(f"[OK] Saved HTML email: {html_path}")
@@ -275,13 +278,13 @@ class RevManFlow(Flow[RevManFlowState]):
                 "validation_passed": self.state.validation_passed,
                 "recipients": self.state.email_recipients or [],
             }
-            metadata_path = output_dir / f"{base_filename}_metadata.json"
+            metadata_path = OUTPUT_DIR / f"{base_filename}_metadata.json"
             with open(metadata_path, 'w', encoding='utf-8') as f:
                 json.dump(metadata, f, indent=2)
             print(f"[OK] Saved metadata: {metadata_path}")
 
             # Save validation report
-            report_path = output_dir / f"{base_filename}_validation.json"
+            report_path = OUTPUT_DIR / f"{base_filename}_validation.json"
             with open(report_path, 'w', encoding='utf-8') as f:
                 json.dump(self.state.validation_report, f, indent=2)
             print(f"[OK] Saved validation report: {report_path}")
@@ -303,7 +306,7 @@ class RevManFlow(Flow[RevManFlowState]):
 
 def kickoff():
     """Run the RevMan flow"""
-    flow = RevManFlow(tracing=True)
+    flow = RevManFlow()
     flow.kickoff()
 
 

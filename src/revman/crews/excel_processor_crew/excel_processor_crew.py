@@ -1,4 +1,4 @@
-from crewai import Agent, Crew, Process, Task
+from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
 
@@ -13,6 +13,7 @@ class ExcelProcessorCrew:
     def excel_parser_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["excel_parser_agent"],
+            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
             verbose=True,
         )
 
@@ -20,13 +21,15 @@ class ExcelProcessorCrew:
     def data_analyst_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["data_analyst_agent"],
-            verbose=True,
+            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
+            verbose=False,
         )
 
     @agent
     def data_validator_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["data_validator_agent"],
+            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
             verbose=True,
         )
 
@@ -55,5 +58,5 @@ class ExcelProcessorCrew:
             agents=self.agents,  # Automatically includes all @agent decorated methods
             tasks=self.tasks,  # Automatically includes all @task decorated methods
             process=Process.sequential,
-            verbose=True,
+            verbose=False,
         )
