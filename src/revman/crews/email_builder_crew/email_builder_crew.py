@@ -4,7 +4,7 @@ from crewai.project import CrewBase, agent, crew, task
 
 @CrewBase
 class EmailBuilderCrew:
-    """Email Builder Crew - Generates formatted HTML email from price change data"""
+    """Email Builder Crew - Generates plain text email from price change data in template format"""
 
     agents_config = "config/agents.yaml"
     tasks_config = "config/tasks.yaml"
@@ -17,24 +17,10 @@ class EmailBuilderCrew:
             verbose=True,
         )
 
-    @agent
-    def html_email_formatter_agent(self) -> Agent:
-        return Agent(
-            config=self.agents_config["html_email_formatter_agent"],
-            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            verbose=True,
-        )
-
     @task
     def write_highlights_content(self) -> Task:
         return Task(
             config=self.tasks_config["write_highlights_content"],
-        )
-
-    @task
-    def format_as_html_email(self) -> Task:
-        return Task(
-            config=self.tasks_config["format_as_html_email"],
         )
 
     @crew

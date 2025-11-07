@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 RevMan Price Change Email Flow
-Processes Excel price change reports and generates formatted HTML email templates
+Processes Excel price change reports and generates plain text email content in template format
 """
 
 import json
@@ -43,7 +43,7 @@ class RevManFlowState(BaseModel):
 
     # Email Generation Output (Crew 2)
     highlights_text: str = ""
-    email_html: str = ""
+    email_content: str = ""  # Plain text email content in template format
     email_subject: str = ""
     email_metadata: Dict[str, Any] = {}
 
@@ -159,11 +159,10 @@ class RevManFlow(Flow[RevManFlowState]):
     def email_generation_step(self):
         """
         Run Email Builder Crew (Crew 2)
-        - Generate highlights content
-        - Format as HTML email
+        - Generate highlights content in plain text template format
         """
         print("\n" + "-" * 60)
-        print("[EMAIL] Step 2: Email Generation")
+        print("[EMAIL] Step 2: Email Content Generation")
         print("-" * 60)
 
         try:
@@ -174,20 +173,20 @@ class RevManFlow(Flow[RevManFlowState]):
                 .kickoff(inputs={
                     "price_changes_categorized": self.state.price_changes_categorized,
                     "trigger_date": self.state.trigger_date.isoformat(),
-                    "highlights_text": "",  # Will be populated by first task
+                    "highlights_text": "",  # Will be populated by the task
                 })
             )
 
-            print(f"[OK] Email generation completed")
+            print(f"[OK] Email content generation completed")
 
             # Extract email content from result
             result_str = result.raw if hasattr(result, 'raw') else str(result)
 
-            # The result should be HTML content from format_as_html_email task
-            self.state.email_html = result_str
+            # The result should be plain text content in template format
+            self.state.email_content = result_str
             self.state.email_subject = f"TBS Price Change Summary - {self.state.trigger_date.strftime('%B %d, %Y')}"
 
-            print(f"[OK] Email HTML generated")
+            print(f"[OK] Email content generated in template format")
             print(f"  Subject: {self.state.email_subject}")
 
         except Exception as e:
@@ -199,27 +198,50 @@ class RevManFlow(Flow[RevManFlowState]):
     def validation_step(self):
         """
         Validate email output
-        - Check data completeness
-        - Validate HTML structure
-        - Verify formatting
+        - Check content completeness
+        - Verify template format structure
+        - Check for required sections
         """
         print("\n" + "-" * 60)
-        print("[VALIDATION] Step 3: Validation")
+        print("[VALIDATION] Step 3: Content Validation")
         print("-" * 60)
 
         try:
-            # Use EmailValidatorTool
-            validator = EmailValidatorTool()
-            validation_result = validator._run(
-                html_content=self.state.email_html,
-                subject_line=self.state.email_subject
-            )
+            # Basic validation for plain text template format
+            content = self.state.email_content
 
-            # Parse validation result
-            validation_data = json.loads(validation_result)
+            validation_data = {
+                "validation_status": "PASS",
+                "quality_score": 100,
+                "critical_issues": [],
+                "warnings": []
+            }
+
+            # Check for required elements
+            if "Highlights (Price Before Tax and Deposit)" not in content:
+                validation_data["critical_issues"].append("Missing required title: 'Highlights (Price Before Tax and Deposit)'")
+
+            # Check for at least one brewer section
+            brewers = ["LABATT", "MOLSON", "SLEEMAN"]
+            has_brewer = any(brewer in content for brewer in brewers)
+            if not has_brewer:
+                validation_data["critical_issues"].append("No brewer sections found (LABATT, MOLSON, SLEEMAN)")
+
+            # Check for at least one change type section
+            sections = ["Begin LTO", "End LTO", "Permanent Changes"]
+            has_section = any(section in content for section in sections)
+            if not has_section:
+                validation_data["warnings"].append("No change type sections found (Begin LTO, End LTO, Permanent Changes)")
+
+            # Update validation status based on issues
+            if validation_data["critical_issues"]:
+                validation_data["validation_status"] = "FAIL"
+                validation_data["quality_score"] = 0
+            elif validation_data["warnings"]:
+                validation_data["validation_status"] = "PASS WITH WARNINGS"
+                validation_data["quality_score"] = 80
+
             self.state.validation_report = validation_data
-
-            # Check if validation passed
             status = validation_data.get("validation_status", "FAIL")
             self.state.validation_passed = status in ["PASS", "PASS WITH WARNINGS"]
 
@@ -247,7 +269,7 @@ class RevManFlow(Flow[RevManFlowState]):
     def save_email_output(self):
         """
         Save generated email to output directory
-        - Save HTML email
+        - Save plain text email in template format
         - Save metadata
         - Save validation report
         """
@@ -263,11 +285,11 @@ class RevManFlow(Flow[RevManFlowState]):
             timestamp = self.state.trigger_date.strftime("%Y-%m-%d")
             base_filename = f"price_change_email_{timestamp}"
 
-            # Save HTML email
-            html_path = OUTPUT_DIR / f"{base_filename}.html"
-            with open(html_path, 'w', encoding='utf-8') as f:
-                f.write(self.state.email_html)
-            print(f"[OK] Saved HTML email: {html_path}")
+            # Save plain text email
+            txt_path = OUTPUT_DIR / f"{base_filename}.txt"
+            with open(txt_path, 'w', encoding='utf-8') as f:
+                f.write(self.state.email_content)
+            print(f"[OK] Saved email content: {txt_path}")
 
             # Save metadata
             metadata = {
@@ -289,12 +311,12 @@ class RevManFlow(Flow[RevManFlowState]):
                 json.dump(self.state.validation_report, f, indent=2)
             print(f"[OK] Saved validation report: {report_path}")
 
-            self.state.output_file_path = str(html_path)
+            self.state.output_file_path = str(txt_path)
 
             print("\n" + "=" * 60)
             print("[SUCCESS] RevMan Flow Completed Successfully!")
             print("=" * 60)
-            print(f"Output: {html_path}")
+            print(f"Output: {txt_path}")
             print(f"Subject: {self.state.email_subject}")
             print("=" * 60 + "\n")
 

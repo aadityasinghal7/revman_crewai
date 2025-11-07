@@ -28,7 +28,7 @@ write_highlights_content:
     - Competitive benchmarking (e.g., "Ultra at $58.99")
 
   expected_output: |
-    Structured plain text content ready for email formatting:
+    Structured plain text content in the exact template format:
 
     Highlights (Price Before Tax and Deposit)
 
@@ -49,57 +49,9 @@ write_highlights_content:
 
     The output should be:
     - Professional business tone with strategic rationale
-    - Plain text format (not HTML yet)
+    - Plain text format (NOT HTML)
     - Properly organized by brewer and change type
     - Each product line correctly formatted
+    - Ready to paste directly into an email
 
   agent: email_content_writer_agent
-
-format_as_html_email:
-  description: |
-    Convert the highlights text content into a clean, professional HTML email.
-
-    REQUIREMENTS:
-    - Simple, readable HTML structure (not complex tables)
-    - Use clean typography and spacing
-    - Style brewer names as bold headers (larger font, bold)
-    - Style section headers (Begin LTO, End LTO, etc.) as subheaders (bold, medium size)
-    - Indent product lines for readability
-    - Use appropriate colors:
-      * GREEN (#28a745) for price decreases (Begin LTO items)
-      * RED (#dc3545) for price increases (End LTO items)
-      * BLUE (#0066cc) for Permanent Changes
-    - Add professional email header with title
-    - Add clean footer with timestamp and disclaimer
-    - Ensure mobile-responsive design
-    - Compatible with all major email clients (use inline CSS only)
-    - Proper HTML structure with DOCTYPE and meta tags
-
-    TRIGGER DATE: {trigger_date}
-
-  expected_output: |
-    Complete HTML email package with:
-
-    1. HTML Content:
-       - Valid HTML5 structure with proper DOCTYPE
-       - Inline CSS styling (no external stylesheets)
-       - Professional header with title
-       - Formatted brewer sections with proper hierarchy
-       - Color-coded price changes (green/red/blue)
-       - Clean spacing and readability
-       - Professional footer with date and disclaimers
-       - Mobile-responsive meta tags
-
-    2. Email Subject Line:
-       "TBS Price Change Summary - [Date]"
-
-    3. Metadata:
-       - Email content type: text/html
-       - Character encoding: UTF-8
-       - Viewport settings for mobile
-
-    The HTML should render beautifully in Gmail, Outlook, Apple Mail, and other major clients.
-
-  agent: html_email_formatter_agent
-  context:
-    - write_highlights_content
