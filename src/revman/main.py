@@ -31,18 +31,10 @@ TEMPLATE_DIR = Path(os.getenv('REVMAN_TEMPLATE_DIR', DATA_DIR / "templates"))
 
 
 class RevManFlowState(BaseModel):
-    """State model for RevMan Price Change Flow"""
+    """State model for RevMan Price Change Flow - Only user-provided inputs"""
 
-    # Input
+    # User input - the only field required at kickoff
     excel_file_path: str = str(INPUT_DIR / "TBS Price Change Summary Report - October 13th'25.xlsx")
-    trigger_date: datetime = datetime.now()
-    email_recipients: List[str] = ["aaditya.singhal@anheuser-busch.com"]
-
-    # Email Generation Output (Crew 2)
-    highlights_text: str = ""
-    email_content: str = ""  # Plain text email content in template format
-    email_subject: str = ""
-    email_metadata: Dict[str, Any] = {}
 
 
 class RevManFlow(Flow[RevManFlowState]):
@@ -61,6 +53,13 @@ class RevManFlow(Flow[RevManFlowState]):
         # Timing tracking
         self._flow_start_time = None
         self._step_times = {}
+
+        # Internal state - auto-generated, not from kickoff
+        self._trigger_date: datetime = None  # Will be set to datetime.now() in trigger_flow
+        self._email_recipients: List[str] = None  # Will load from env in trigger_flow
+        self._email_content: str = ""
+        self._email_subject: str = ""
+        self._email_metadata: Dict[str, Any] = {}
 
     def _format_duration(self, seconds: float) -> str:
         """Format duration in human-readable format"""
@@ -107,22 +106,26 @@ class RevManFlow(Flow[RevManFlowState]):
         self._flow_start_time = time.time()
         step_start = time.time()
 
+        # Auto-generate internal state
+        self._trigger_date = datetime.now()
+        self._email_recipients = os.getenv(
+            "REVMAN_EMAIL_RECIPIENTS",
+            "aaditya.singhal@anheuser-busch.com"
+        ).split(",")  # Support comma-separated list
+
         print("\n" + "=" * 60)
         print("[START] RevMan Price Change Flow Started")
         print("=" * 60)
 
         if crewai_trigger_payload:
-            # Use trigger payload for trigger_date if provided
-            trigger_date_str = crewai_trigger_payload.get("trigger_date")
-            if trigger_date_str:
-                self.state.trigger_date = datetime.fromisoformat(trigger_date_str.replace('Z', '+00:00'))
-
             print(f"[OK] Using trigger payload")
             print(f"  File: {self.state.excel_file_path}")
-            print(f"  Date: {self.state.trigger_date}")
         else:
             print(f"[OK] Using default configuration")
             print(f"  File: {self.state.excel_file_path}")
+
+        print(f"  Date: {self._trigger_date}")
+        print(f"  Recipients: {', '.join(self._email_recipients)}")
 
         # Validate input file exists
         if not Path(self.state.excel_file_path).exists():
@@ -223,8 +226,6 @@ class RevManFlow(Flow[RevManFlowState]):
                 .crew()
                 .kickoff(inputs={
                     "price_changes_categorized": self._price_changes_categorized,
-                    "trigger_date": self.state.trigger_date.isoformat(),
-                    "highlights_text": "",  # Will be populated by the task
                 })
             )
 
@@ -237,11 +238,11 @@ class RevManFlow(Flow[RevManFlowState]):
             result_str = result.raw if hasattr(result, 'raw') else str(result)
 
             # The result should be plain text content in template format
-            self.state.email_content = result_str
-            self.state.email_subject = f"TBS Price Change Summary - {self.state.trigger_date.strftime('%B %d, %Y')}"
+            self._email_content = result_str
+            self._email_subject = f"TBS Price Change Summary - {self._trigger_date.strftime('%B %d, %Y')}"
 
             print(f"[OK] Email content generated in template format")
-            print(f"  Subject: {self.state.email_subject}")
+            print(f"  Subject: {self._email_subject}")
 
         except Exception as e:
             error_msg = f"Error in email generation: {str(e)}"
@@ -264,7 +265,7 @@ class RevManFlow(Flow[RevManFlowState]):
 
         try:
             # Basic validation for plain text template format
-            content = self.state.email_content
+            content = self._email_content
 
             validation_data = {
                 "validation_status": "PASS",
@@ -352,23 +353,23 @@ class RevManFlow(Flow[RevManFlowState]):
             OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
             # Generate filename with timestamp
-            timestamp = self.state.trigger_date.strftime("%Y-%m-%d")
+            timestamp = self._trigger_date.strftime("%Y-%m-%d")
             base_filename = f"price_change_email_{timestamp}"
 
             # Save plain text email
             txt_path = OUTPUT_DIR / f"{base_filename}.txt"
             with open(txt_path, 'w', encoding='utf-8') as f:
-                f.write(self.state.email_content)
+                f.write(self._email_content)
             print(f"[OK] Saved email content: {txt_path}")
 
             # Save metadata
             metadata = {
-                "subject": self.state.email_subject,
+                "subject": self._email_subject,
                 "generated_at": datetime.now().isoformat(),
-                "trigger_date": self.state.trigger_date.isoformat(),
+                "trigger_date": self._trigger_date.isoformat(),
                 "input_file": self.state.excel_file_path,
                 "validation_passed": self._validation_passed,
-                "recipients": self.state.email_recipients,
+                "recipients": self._email_recipients,
             }
             metadata_path = OUTPUT_DIR / f"{base_filename}_metadata.json"
             with open(metadata_path, 'w', encoding='utf-8') as f:
@@ -392,7 +393,7 @@ class RevManFlow(Flow[RevManFlowState]):
             print("[SUCCESS] RevMan Flow Completed Successfully!")
             print("=" * 60)
             print(f"Output: {txt_path}")
-            print(f"Subject: {self.state.email_subject}")
+            print(f"Subject: {self._email_subject}")
             print("=" * 60 + "\n")
 
         except Exception as e:
