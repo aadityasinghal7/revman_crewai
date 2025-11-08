@@ -128,9 +128,17 @@ class RevManFlow(Flow[RevManFlowState]):
         print(f"  Recipients: {', '.join(self._email_recipients)}")
 
         # Validate input file exists
-        if not Path(self.state.excel_file_path).exists():
-            raise FileNotFoundError(f"Excel file not found: {self.state.excel_file_path}")
+        # Handle both absolute and relative paths
+        excel_path = Path(self.state.excel_file_path)
+        if not excel_path.is_absolute():
+            # If relative path, resolve it relative to INPUT_DIR
+            excel_path = INPUT_DIR / excel_path
 
+        if not excel_path.exists():
+            raise FileNotFoundError(f"Excel file not found: {excel_path}")
+
+        # Update state with resolved absolute path
+        self.state.excel_file_path = str(excel_path)
         print(f"[OK] Input file validated")
 
         # Record timing
