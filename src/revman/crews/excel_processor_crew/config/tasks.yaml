@@ -32,64 +32,97 @@ parse_excel_file:
 
   agent: excel_parser_agent
 
+generate_formula_excel:
+  description: |
+    Generate a copy of the input Excel file with formulas added to calculate formatted price change text.
+
+    INSTRUCTIONS:
+    - Input: {excel_file_path} (the path to the original Excel file)
+    - Output directory: {output_dir} (where to save the formula Excel file)
+    - Use the FormulaExcelGeneratorTool to create the Excel file with formulas
+    - The formula should be: =PROPER($D[ROW])&" "&$H[ROW]&$L[ROW]&" "&$M[ROW]&"$"&ABS($K[ROW])&" to $"&$J[ROW]
+      where [ROW] represents the actual row number (7, 8, 9, etc.)
+    - Formula is added to column N for each data row
+    - Data starts after 6 header rows (row 7 is typically the first data row)
+    - Output filename should follow pattern: "TBS Price Change Summary Report - [Month] [day]th'[YY]_formula.xlsx"
+    - The tool will automatically extract the month/date from the input filename
+    - Save to the output directory specified
+
+    This creates a version of the Excel file that Mark can open to see the formatted price changes,
+    matching his manual workflow of applying formulas in Excel.
+
+  expected_output: |
+    A JSON response containing:
+    - success: true/false
+    - output_file: Full path to the generated Excel file with formulas
+    - output_filename: Just the filename of the generated file
+    - formulas_added: Count of how many formula rows were added
+    - message: Success message with details
+
+    Example:
+    {{
+      "success": true,
+      "output_file": "C:/path/to/output/TBS Price Change Summary Report - October 13th'25_formula.xlsx",
+      "output_filename": "TBS Price Change Summary Report - October 13th'25_formula.xlsx",
+      "formulas_added": 150,
+      "message": "Successfully created formula Excel file with 150 formulas"
+    }}
+
+  agent: excel_parser_agent
+  context:
+    - parse_excel_file
+
 analyze_price_changes:
   description: |
     Analyze and categorize price change data for highlights email based on the actual template structure.
 
     PRIMARY CATEGORIZATION:
     1. Group all products by Brewer (e.g., LABATT, MOLSON, SLEEMAN)
-    2. Within each brewer, categorize changes by type:
-       - "Begin LTO" - Price DECREASES indicating start of Limited Time Offers
-       - "End LTO" - Price INCREASES indicating end of Limited Time Offers
-       - "End LTO & Perm Change" - Combined LTO ending with permanent adjustment
-       - "Permanent Changes" - Ongoing price adjustments (small changes, typically < $1)
+    2. Within each brewer, categorize changes using PRECISE mathematical rules:
+       - "Begin LTO" - Price DECREASES that are multiples of $0.25 AND reduce price by >5%
+       - "End LTO" - Price INCREASES that are multiples of $0.25 AND increase price by >5%
+       NOTE: These are the ONLY two categories. No other categories exist.
 
     FOR EACH PRODUCT:
-    - Calculate price change amount (+ for increase, - for decrease)
+    - Calculate: price_change_amount (+ for increase, - for decrease)
+    - Calculate: price_change_percent = abs((change_amount / old_price) * 100)
+    - Check: is_quarter_multiple = (abs(change_amount) % 0.25) < 0.01
     - Determine final price (New Price)
-    - Identify business context when applicable:
-      * "increased depth as a competitive response" (large decreases)
-      * "end SCO mitigation" (price increases after promotion)
-      * Value positioning (e.g., "Labatt Value at $23.49")
-      * Competitive benchmarking (e.g., "Ultra at $58.99")
-    - Format as: "Product Name PackSize +/-$X.XX to $YY.YY (optional context)"
-
-    INTELLIGENT FILTERING:
-    - Focus on highlights only (significant changes, strategic moves)
-    - Prioritize larger changes (> $2) for inclusion
-    - Include strategic price points and competitive responses
-    - Not all products need to be included - curate based on business importance
+    - Apply categorization rules:
+      * If decrease AND is_quarter_multiple AND price_change_percent > 5: "Begin LTO"
+      * If increase AND is_quarter_multiple AND price_change_percent > 5: "End LTO"
+      * Otherwise: Do NOT include (doesn't meet criteria)
+    - Format as: "Product Name PackSize +/-$X.XX to $YY.YY" (NO context or commentary)
 
   expected_output: |
     Structured categorization dictionary with format:
     {{
       "LABATT": {{
         "Begin LTO": [
-          "Budweiser 30C -$5.50 to $45.99 (increased depth as a competitive response)",
+          "Budweiser 30C -$5.50 to $45.99",
           "MSO 24C -$4 to $44.99",
           ...
         ],
         "End LTO": [
-          "Bud Light Lemon Lime 12C +$2 to $29.99 (end SCO mitigation)",
-          ...
-        ],
-        "Permanent Changes": [
-          "Bud Light 28B -$0.50 to $43.49",
+          "Bud Light Lemon Lime 12C +$2 to $29.99",
           ...
         ]
       }},
       "MOLSON": {{
         "Begin LTO": [...],
-        "End LTO": [...],
-        ...
+        "End LTO": [...]
       }},
-      ...
+      "SLEEMAN": {{
+        "Begin LTO": [...],
+        "End LTO": [...]
+      }}
     }}
 
     Each entry should be:
-    - Properly formatted with product name, pack size, price change, final price
-    - Include business context where strategic value is clear
-    - Only include notable/significant changes (highlights)
+    - Formatted as: Product PackSize +/-$Amount to $NewPrice
+    - NO business context or explanatory notes
+    - Only products meeting the 5% + $0.25 multiple criteria
+    - Categorized using precise mathematical rules above
     - Ready for direct insertion into email template
 
   agent: data_analyst_agent
@@ -98,44 +131,43 @@ analyze_price_changes:
 
 validate_data_quality:
   description: |
-    Validate data quality and integrity before finalizing the price change categorization.
+    PLACEHOLDER TASK - Minimal validation for now. Comprehensive validation will be added in a future phase.
 
-    VALIDATION CHECKS:
-    1. Data Completeness:
-       - Check for missing required fields (product name, prices, brewer)
-       - Verify all categorized products have complete information
-       - Flag any records with null or invalid values
+    For now, simply:
+    1. Accept the categorized price change data from the previous task
+    2. Perform basic checks (data exists, not empty)
+    3. Pass through the categorized data unchanged
 
-    2. Calculation Accuracy:
-       - Verify: Old Price - New Price = Change amount
-       - Check that "Begin LTO" entries have negative changes (decreases)
-       - Check that "End LTO" entries have positive changes (increases)
-       - Validate price values are positive numbers
-
-    3. Data Quality:
-       - Identify any outliers (unusually large changes > $20)
-       - Check for duplicate entries
-       - Verify brewer names are consistent
-       - Ensure pack size formats are valid
-
-    4. Business Rules:
-       - Confirm LTO categorization makes sense
-       - Verify business context is appropriate
-       - Check that highlights are truly significant
+    CRITICAL: You MUST output BOTH a minimal validation report AND the original categorized data unchanged.
 
   expected_output: |
-    Validation report with:
-    - Overall validation status: PASS or FAIL
-    - Detailed findings:
-      * Number of records validated
-      * Number of errors found (critical issues)
-      * Number of warnings (minor issues)
-      * List of specific issues with record details
-    - Data quality score (0-100)
-    - Recommendations for any corrections needed
-    - Summary of what passed validation
+    A JSON object containing BOTH minimal validation results and the UNCHANGED categorized data:
+    {{
+      "validation": {{
+        "status": "PASS",
+        "summary": "Placeholder validation - data passed through"
+      }},
+      "categorized_data": {{
+        "LABATT": {{
+          "Begin LTO": [
+            "Budweiser 30C -$5.50 to $45.99",
+            ...
+          ],
+          "End LTO": [...]
+        }},
+        "MOLSON": {{
+          "Begin LTO": [...],
+          "End LTO": [...]
+        }},
+        "SLEEMAN": {{
+          "Begin LTO": [...],
+          "End LTO": [...]
+        }}
+      }}
+    }}
 
-    If critical errors exist, clearly flag them for attention.
+    IMPORTANT: The categorized_data section must contain the COMPLETE, UNCHANGED price change data from the analyze_price_changes task.
+    This is a passthrough task for now. Comprehensive validation will be added in a future phase.
 
   agent: data_validator_agent
   context:

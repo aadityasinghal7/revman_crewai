@@ -3304,6 +3304,7 @@ dependencies = [
     { name = "crewai", extra = ["anthropic", "tools"] },
     { name = "openpyxl" },
     { name = "pandas" },
+    { name = "python-docx" },
 ]
 
 [package.metadata]
@@ -3311,6 +3312,7 @@ requires-dist = [
     { name = "crewai", extras = ["anthropic", "tools"], specifier = "==1.2.0" },
     { name = "openpyxl", specifier = ">=3.1.0" },
     { name = "pandas", specifier = ">=2.0.0" },
+    { name = "python-docx", specifier = ">=1.0.0" },
 ]
 
 [[package]]

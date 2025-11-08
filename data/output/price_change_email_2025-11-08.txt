@@ -1,0 +1,113 @@
+Highlights (Price Before Tax and Deposit)
+
+LABATT BREWERIES OF CANADA LP
+Begin LTO
+Budweiser 30C -$5.50 to $45.99
+Bud Light 30C -$5.50 to $45.99
+Kokanee 30C -$5.50 to $45.99
+Michelob Ultra 30C -$5.50 to $45.99
+Bud Light Lime 24C -$4.50 to $41.99
+Bud Light 24C -$4.50 to $41.99
+Budweiser 24C -$4.50 to $41.99
+Kokanee 24C -$4.50 to $41.99
+Stella Artois 24C -$4.50 to $41.99
+Corona Extra 24C -$4.50 to $41.99
+Kokanee Gold 24C -$4.50 to $41.99
+Busch 24C -$4.00 to $37.99
+Lucky Lager 24C -$4.00 to $37.99
+Wildcat Strong 24C -$4.00 to $37.99
+Bud Light Seltzer Variety 12C -$2.00 to $19.99
+
+End LTO
+Budweiser 15C +$2.75 to $27.49
+Bud Light 15C +$2.75 to $27.49
+Kokanee 15C +$2.75 to $27.49
+Michelob Ultra 15C +$2.75 to $27.49
+
+MOLSON COORS CANADA INC
+Begin LTO
+Coors Light 30C -$5.50 to $45.99
+Molson Canadian 30C -$5.50 to $45.99
+Miller Genuine Draft 30C -$5.50 to $45.99
+Carling 30C -$5.50 to $45.99
+Molson Export 30C -$5.50 to $45.99
+Coors Light 24C -$4.50 to $41.99
+Molson Canadian 24C -$4.50 to $41.99
+Miller Genuine Draft 24C -$4.50 to $41.99
+Carling 24C -$4.50 to $41.99
+Coors Banquet 24C -$4.50 to $41.99
+Miller High Life 24C -$4.00 to $37.99
+Old Style Pilsner 24C -$4.00 to $37.99
+Molson Dry 24C -$4.00 to $37.99
+
+End LTO
+Coors Light 15C +$2.75 to $27.49
+Molson Canadian 15C +$2.75 to $27.49
+Miller Genuine Draft 15C +$2.75 to $27.49
+Carling 15C +$2.75 to $27.49
+
+SLEEMAN BREWERIES LTD
+Begin LTO
+Colt 45 24C -$8.07 to $77.95
+Sleeman Original Draught 24C -$4.50 to $41.99
+Sleeman Clear 24C -$4.50 to $41.99
+Sleeman Honey Brown 24C -$4.50 to $41.99
+Okanagan Spring 1516 24C -$4.50 to $41.99
+Sleeman Light 24C -$4.00 to $37.99
+Stroh's 24C -$4.00 to $37.99
+
+End LTO
+Sleeman Original Draught 15C +$2.75 to $27.49
+Sleeman Clear 15C +$2.75 to $27.49
+Sleeman Honey Brown 15C +$2.75 to $27.49
+
+MOOSEHEAD BREWERIES LIMITED
+Begin LTO
+James Ready 5.5 60C -$6.00 to $84.99
+Moosehead Lager 24C -$4.50 to $41.99
+Moosehead Radler 24C -$4.50 to $41.99
+
+End LTO
+Moosehead Lager 15C +$2.75 to $27.49
+
+HEINEKEN CANADA INC
+Begin LTO
+Heineken NV 24B -$6.20 to $54.50
+Heineken Silver 24B -$6.20 to $54.50
+Amstel Light 24C -$4.50 to $41.99
+Dos Equis Lager 24C -$4.50 to $41.99
+
+STEAM WHISTLE BREWING INC
+Begin LTO
+Steam Whistle 48B -$10.00 to $85.99
+
+CARLSBERG MARSTON'S BREWING COMPANY
+Begin LTO
+Crest Super 24C -$8.85 to $74.82
+
+BEAU'S ALL NATURAL BREWING CO LTD
+Begin LTO
+Beaus Lug Lite Lager 48C -$8.00 to $71.99
+
+MUSKOKA COTTAGE BREWERY INC
+Begin LTO
+Muskoka Tread Light 48C -$8.00 to $78.99
+
+BRICK BREWING CO LIMITED
+Begin LTO
+Laker Lager 24C -$4.00 to $37.99
+Laker Ice 24C -$4.00 to $37.99
+Laker Light 24C -$4.00 to $37.99
+Red Baron 24C -$4.00 to $37.99
+
+AMSTERDAM BREWING COMPANY
+Begin LTO
+Amsterdam Natural Blonde 24C -$4.50 to $41.99
+
+WATERLOO BREWING LTD
+Begin LTO
+Waterloo Dark 24C -$4.50 to $41.99
+
+GREAT LAKES BREWERY
+Begin LTO
+Great Lakes Canuck Pale Ale 24C -$4.50 to $41.99

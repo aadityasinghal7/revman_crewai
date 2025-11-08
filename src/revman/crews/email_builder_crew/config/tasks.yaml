@@ -1,31 +1,31 @@
 write_highlights_content:
   description: |
-    Transform the categorized price change data into the standard "Highlights" email format.
+    Transform the categorized price change data from {price_changes_categorized} into the standard "Highlights" email format.
+
+    INPUT DATA:
+    You will receive a dictionary with brewers as keys and their price changes categorized by type.
+    Use ALL the data provided - do NOT use placeholder values.
 
     REQUIRED STRUCTURE:
     1. Title: "Highlights (Price Before Tax and Deposit)"
     2. For each Brewer (LABATT, MOLSON, SLEEMAN, etc.):
        - Brewer name as header
-       - "Begin LTO" section with price decreases
-       - "End LTO" section with price increases
-       - "End LTO & Perm Change" section (if applicable)
-       - "Permanent Changes" section (if applicable)
+       - "Begin LTO" section with price decreases (>5%, $0.25 multiples)
+       - "End LTO" section with price increases (>5%, $0.25 multiples)
        - Empty line between brewers
 
     FORMAT EACH LINE:
-    Product PackSize +/-$Amount to $FinalPrice (optional context)
+    Product PackSize +/-$Amount to $FinalPrice
 
     Examples:
-    - "Budweiser 30C -$5.50 to $45.99 (increased depth as a competitive response)"
-    - "Bud Light Lemon Lime 12C +$2 to $29.99 (end SCO mitigation)"
+    - "Budweiser 30C -$5.50 to $45.99"
+    - "Bud Light Lemon Lime 12C +$2 to $29.99"
     - "Corona 24B +$3 to $50.69"
 
-    BUSINESS CONTEXT:
-    Add context where appropriate explaining WHY the change is happening:
-    - "increased depth as a competitive response"
-    - "end SCO mitigation"
-    - Value positioning references (e.g., "Labatt Value at $23.49")
-    - Competitive benchmarking (e.g., "Ultra at $58.99")
+    FORMAT RULES:
+    - Use EXACT format: Product PackSize +/-$Amount to $FinalPrice
+    - Do NOT add any business context, commentary, or explanatory notes
+    - Present data cleanly without additional interpretation
 
   expected_output: |
     Structured plain text content in the exact template format:
@@ -39,19 +39,19 @@ write_highlights_content:
     End LTO
     Product lines...
 
-    Permanent Changes
-    Product lines...
-
     MOLSON
     Begin LTO
+    Product lines...
+
+    End LTO
     Product lines...
     ...
 
     The output should be:
-    - Professional business tone with strategic rationale
     - Plain text format (NOT HTML)
     - Properly organized by brewer and change type
-    - Each product line correctly formatted
+    - Each product line formatted as: Product PackSize +/-$Amount to $FinalPrice
+    - NO business context or commentary
     - Ready to paste directly into an email
 
   agent: email_content_writer_agent

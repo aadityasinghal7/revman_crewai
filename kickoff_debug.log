@@ -1,0 +1,129 @@
+Flow started with ID: 033f958d-9387-454f-a80c-1cedecd55ca3
+[1m[35mFlow started with ID: 033f958d-9387-454f-a80c-1cedecd55ca3[0m
++------------------------------ Flow Execution 
+============================================================
+[START] RevMan Price Change Flow Started
+============================================================
+[OK] Using default configuration
+  File: data\input\TBS Price Change Summary Report - October 13th'25.xlsx
+-------------------------------+
+|                                                                             [OK] Input file validated
+
+|
+|  Starting Flow Execution
+------------------------------------------------------------
+[EXCEL] Step 1: Excel Processing
+------------------------------------------------------------
+                                                    |
+|  Name: RevManFlow                                                           |
+|  ID: 033f958d-9387-454f-a80c-1cedecd55ca3                                   |
+|  Tool Args:                                                                 |
+|                                                                             |
+|                                                                             |
++-----------------------------------------------------------------------------+
+
+[CrewAIEventsBus] Sync handler error in on_crew_started: 'charmap' codec can't 
+encode character '\U0001f30a' in position 0: character maps to <undefined>
++------------------------------- Task Started --------------------------------+
+|                                                                             |
+|  [CrewAIEventsBus] Sync handler error in on_task_started: 'charmap' codec can't 
+encode character '\U0001f4cb' in position 0: character maps to <undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_started: 'charmap' codec 
+can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
+C:\Users\Y946107\OneDrive - Anheuser-Busch InBev\FY25\Personal git repo\RevMan-POC-Crew\revman\.venv\Lib\site-packages\openpyxl\worksheet\header_footer.py:48: UserWarning: Cannot parse header or footer so it will be ignored
+  warn("""Cannot parse header or footer so it will be ignored""")
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
++------------------------------- Task Started --------------------------------+
+|                                                                             |
+|  [CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f4cb' in position 0: character maps to 
+<undefined>
+[CrewAIEventsBus] Sync handler error in on_task_started: 'charmap' codec can't 
+encode character '\U0001f30a' in position 0: character maps to <undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_started: 'charmap' codec 
+can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
+C:\Users\Y946107\OneDrive - Anheuser-Busch InBev\FY25\Personal git repo\RevMan-POC-Crew\revman\.venv\Lib\site-packages\openpyxl\worksheet\header_footer.py:48: UserWarning: Cannot parse header or footer so it will be ignored
+  warn("""Cannot parse header or footer so it will be ignored""")
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
+[CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f30a' in position 0: character maps to 
+<undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_task_started: 'charmap' codec can't 
+encode character '\U0001f916' in position 1: character maps to <undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_started: 'charmap' codec 
+can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
++------------------------------- Task Started --------------------------------+
+|                                                                             |
+|  [CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f4cb' in position 0: character maps to 
+<undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_task_started: 'charmap' codec can't 
+encode character '\U0001f916' in position 1: character maps to <undefined>
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_started: 'charmap' codec 
+can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
+[CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f30a' in position 0: character maps to 
+<undefined>
+[OK] Excel processing completed
+[WARNING] Result is not JSON format
+
+------------------------------------------------------------
+[EMAIL] Step 2: Email Content Generation
+------------------------------------------------------------
++-----------------------------[CrewAIEventsBus] Sync handler error in on_agent_logs_started: 'charmap' codec 
+can't encode character '\U0001f916' in position 1: character maps to 
+<undefined>
++------------------------------- Task Started --------------------------------+
+|                                                                             |
+|  [CrewAIEventsBus] Sync handler error in on_agent_logs_execution: 'charmap' 
+codec can't encode character '\U0001f4cb' in position 0: character maps to 
+<undefined>
+[OK] Email content generation completed
+[OK] Email content generated in template format
+  Subject: TBS Price Change Summary - November 08, 2025
+
+------------------------------------------------------------
+[VALIDATION] Step 3: Content Validation
+------------------------------------------------------------
+[OK] Validation PASS
+  Quality Score: 100/100
+
+------------------------------------------------------------
+[SAVE] Step 4: Save Output
+------------------------------------------------------------
+[OK] Saved email content: data\output\price_change_email_2025-11-08.txt
+[OK] Saved metadata: data\output\price_change_email_2025-11-08_metadata.json
+[OK] Saved validation report: data\output\price_change_email_2025-11-08_validation.json
+
+============================================================
+[SUCCESS] RevMan Flow Completed Successfully!
+============================================================
+Output: data\output\price_change_email_2025-11-08.txt
+Subject: TBS Price Change Summary - November 08, 2025
+============================================================
+
++------------------------- Trace Batch Finalization --------------------------+
+| ERROR:crewai.events.listeners.tracing.trace_batch_manager:\u274c Error finalizing trace batch: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>

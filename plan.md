@@ -1,34 +1,107 @@
-# RevMan Price Change Email Flow - Implementation Plan
+# RevMan TBS Price Change Email Automation - Implementation Plan
 
 ## Executive Summary
-Transform the existing PoemFlow template into a production-ready Revenue Management system that processes Excel price change reports and generates formatted HTML email templates using a multi-crew CrewAI Flow architecture.
+
+Transform Mark's manual TBS (The Beer Store) price change email workflow into a production-ready automated Revenue Management system. The solution uses CrewAI's multi-crew Flow architecture to process Excel price change reports and generate formatted email summaries automatically.
+
+### Current Manual Process
+
+Mark receives weekly pricing files from TBS via email. His current workflow:
+1. Downloads Excel file attachment (TBS Price Change Summary Report)
+2. Opens Excel and applies a formula to column N to format price changes
+3. Reviews the formula output to identify Begin LTO / End LTO patterns
+4. Manually drafts an internal email grouping changes by brewer (LABATT, MOLSON, SLEEMAN)
+5. Sends summary to stakeholders
+
+**The Formula Mark Uses:**
+```excel
+=PROPER($D9)&" "&$H9&$L9&" "&$M9&"$"&ABS($K9)&" to $"&$J9
+```
+This formula (in column N) combines:
+- Product Name (Column D, proper case)
+- Pack Size (Column H)
+- B/C/TC indicator (Column L)
+- Price change direction (Column M: + or -)
+- Price change amount (Column K, absolute value)
+- New Price (Column J)
+
+**Example Output:** `Budweiser 30C -$5.50 to $45.99`
+
+### Automated Solution
+
+The automated system will:
+- **Trigger:** Receive email with subject "TBS process" containing Excel attachment
+- **Process:** Parse Excel, apply formula logic, categorize by brewer and change type
+- **Generate:** Formatted email content matching Mark's output template
+- **Deliver:** Save to output directory (future: auto-send email)
 
 ---
 
-## IMPORTANT UPDATE - Actual Template Discovered (Nov 4, 2025)
+## Business Requirements
 
-### What Changed
-After successfully analyzing `Output format.docx`, the **actual email template structure is MUCH SIMPLER** than initially assumed. This plan has been updated to reflect the real requirements.
+### Problem Statement
 
-### Key Discoveries
-1. **NO complex HTML tables** - Output is simple structured text organized by sections
-2. **Highlights format** - Focus on curated key changes, not exhaustive data dumps
-3. **Organized by Brewer** - LABATT, MOLSON, SLEEMAN sections
-4. **Categorized by change type** - Begin LTO, End LTO, Permanent Changes
-5. **Business context included** - Strategic rationale provided (e.g., "competitive response", "SCO mitigation")
+Mark spends 30-45 minutes weekly processing TBS price change files. The process is formulaic and repeatable, making it ideal for automation. The goal is to eliminate manual work while maintaining the same output format stakeholders expect.
 
-### Example Format (from actual template):
+### Success Criteria
+
+- ✅ Automatically process TBS Excel files when received via email
+- ✅ Apply Mark's formula logic to generate formatted price change lines
+- ✅ Categorize changes by brewer (LABATT, MOLSON, SLEEMAN, etc.)
+- ✅ Organize by change type (Begin LTO, End LTO, Permanent Changes)
+- ✅ Generate email content in exact template format
+- ✅ Reduce processing time from 30-45 minutes to < 2 minutes
+- ✅ Maintain 100% format consistency with existing emails
+
+### Input Requirements
+
+**Source:** Email from TBS with attachments:
+- **TBS Price Change Summary Report** (primary input)
+
+**Email Trigger:**
+- **Subject:** "TBS process"
+- **Attachments:** Excel file (.xlsx)
+
+**Excel Structure:**
+- **Header Rows:** First 6 rows (skip these)
+- **Data Start:** Row 7
+- **Total Records:** ~150-200 product price changes
+
+**Required Columns:**
+
+| Column | Name | Description |
+|--------|------|-------------|
+| A | SAP Art. No. | Article Number |
+| B | Type of Sale | e.g., "TBS - Retail Price" |
+| C | Brewer | LABATT, MOLSON, SLEEMAN, etc. |
+| D | Product Name | e.g., "Budweiser", "Corona" |
+| E | Pack Type | Bottles, Cans, Tall Cans |
+| F | Pack Volume ml | Volume in milliliters |
+| G | Package Full Name | Full package description |
+| H | Pack Size | e.g., "30C", "24B", "12TC" |
+| I | Old Price | Previous price |
+| J | New Price | New price |
+| K | Increase/(Decrease) | Price change amount |
+| L | B/C/TC | Bottle/Can/Tall Can indicator |
+| M | Formula | Mark's Excel formula output (Column N in his file) |
+
+### Output Requirements
+
+**Format:** Plain text email content (not HTML)
+
+**Template Structure:**
 ```
 Highlights (Price Before Tax and Deposit)
 
 LABATT
 Begin LTO
-Budweiser 30C -$5.50 to $45.99 (increased depth as a competitive response)
+Budweiser 30C -$5.50 to $45.99
 MSO 24C -$4 to $44.99
 ...
 
 End LTO
-Bud Light Lemon Lime 12C +$2 to $29.99 (end SCO mitigation)
+Bud Light Lemon Lime 12C +$2 to $29.99
+...
 ...
 
 MOLSON
@@ -36,959 +109,1000 @@ Begin LTO
 ...
 ```
 
-### What This Means
-- **Simpler implementation** - Less complex than initially planned
-- **Focus on intelligent categorization** - Not just data parsing, but understanding LTO strategy
-- **Business context identification** - Agents need to infer WHY changes are happening
-- **Curated highlights** - Not all products included, only strategic/significant ones
+**Line Format:**
+```
+Product Name PackSize +/-$Amount to $FinalPrice
+```
 
-### Sections Updated
-- ✅ Section 1: Output Requirements - Now shows actual template format
-- ✅ Section 2: Flow State Model - Simplified structure with `price_changes_categorized`
-- ✅ Section 3.1: Excel Processor Crew - Analysis task updated for categorization
-- ✅ Section 3.2: Email Builder Crew - Simplified from 3 agents to 2, tasks match template
-- ✅ Tools - Removed complex table generator, added text-to-HTML formatter
+**Categorization Rules:**
+- **Begin LTO:** Any price reduction that is a multiple of $0.25, that reduces the total price by more than 5% is a begin LTO
+- **End LTO:** Any price increase that is a multiple of $0.25, that increases the total price by more than 5% is an end LTO
+
+**Reference Template:**
+For detailed examples and exact formatting expectations, refer to:
+- **File:** `data/templates/Output format.docx`
+- **Purpose:** Contains actual examples of Mark's email format with real product data
+- **Usage:** Agents can reference this document to understand the precise output structure and formatting nuances
 
 ---
 
-## 1. Data Analysis Summary
+## Architecture Overview
 
-### Excel Input Structure
-**File**: `TBS Price Change Summary Report - October 13th'25.xlsx`
-- **Format**: Single sheet with header rows (data starts at row 7)
-- **Total Records**: ~182 product records
-- **Key Columns**:
-  1. SAP Art. No. (Article Number)
-  2. Type of Sale (e.g., "TBS - Retail Price")
-  3. Brewer
-  4. Product Name
-  5. Pack Type (Bottles/Cans)
-  6. Pack Volume ml
-  7. Package Full Name
-  8. Pack Size
-  9. Old Price
-  10. New Price
-  11. Increase/(Decrease)
-  12. Additional classification columns
-  13. Summary text
+### Flow Structure
 
-### Output Requirements (Based on Actual Template Analysis)
-**Source**: `Output format.docx` - Analyzed November 4, 2025
-
-**Format**: Simple structured text email (NOT complex tables)
-
-**Structure**:
-1. **Title**: "Highlights (Price Before Tax and Deposit)"
-2. **Organized by Brewer**: LABATT, MOLSON, SLEEMAN (and others as applicable)
-3. **Within each brewer, categorized by**:
-   - **Begin LTO** - Price decreases indicating start of Limited Time Offers
-   - **End LTO** - Price increases as LTOs conclude
-   - **End LTO & Perm Change** - Combined changes
-   - **Permanent Changes** - Ongoing adjustments
-
-**Line Item Format**:
 ```
-Product Name PackSize +/-$Amount to $FinalPrice (optional business context)
-```
-
-**Examples from actual template**:
-- "Budweiser 30C -$5.50 to $45.99 (increased depth as a competitive response)"
-- "Bud Light Lemon Lime 12C +$2 to $29.99 (end SCO mitigation)"
-- "Miller High Life 12TC +$2.50 to $23.49 (Labatt Value at $23.49)"
-- "Corona 24B +$3 to $50.69"
-
-**Key Characteristics**:
-- Focus on **highlights only** - not comprehensive data dump
-- **Business context** provided where strategic (competitive responses, value positioning)
-- **Concise bullet-point style** - easy to scan
-- **Simple HTML formatting** - clean sections, not complex tables
-
----
-
-## 2. Architecture Overview
-
-### Flow Structure (Replacing PoemFlow)
-```
-FlowState (Pydantic Model)
-    ↓
-[@start] trigger_flow()  ← Triggered by email from aaditya.singhal@anheuser-busch.com
-                           with subject "test" and Excel attachment
-    ↓
-[@listen] excel_processing_crew()  ← Crew 1: Excel Parser
-    ↓
-[@listen] email_generation_crew()  ← Crew 2: Email Builder
-    ↓
-[@listen] validation_agent()       ← Light Agent: Validator
-    ↓
-[@listen] save_email_output()      ← Save to local directory
+RevManFlow (CrewAI Flow)
+    │
+    ├─ FlowState (Pydantic Model)
+    │   ├─ Input: excel_file_path, trigger_date, recipients
+    │   └─ Output: email_content, email_subject, metadata
+    │
+    ├─ [@start] trigger_flow()
+    │   └─ Triggered by: Email with subject "TBS process"
+    │   └─ Validates: Input file exists and is readable
+    │
+    ├─ [@listen] excel_processing_crew()  ← CREW 1
+    │   ├─ excel_parser_agent
+    │   │   ├─ Task: parse_excel_file
+    │   │   └─ Task: generate_formula_excel
+    │   ├─ data_analyst_agent
+    │   │   └─ Task: analyze_price_changes
+    │   └─ data_validator_agent
+    │       └─ Task: validate_data_quality
+    │
+    ├─ [@listen] email_generation_crew()  ← CREW 2
+    │   └─ email_content_writer_agent
+    │       └─ Task: write_highlights_content
+    │
+    ├─ [@listen] validation_step()  ← LIGHT VALIDATION
+    │   └─ Basic checks (minimal for now)
+    │
+    └─ [@listen] save_email_output()
+        └─ Saves: .txt, _metadata.json, _validation.json
 ```
 
 ### Flow State Model
+
 ```python
 class RevManFlowState(BaseModel):
+    """State model for RevMan Price Change Flow"""
+
     # Input
-    excel_file_path: str
-    trigger_date: datetime
-    email_recipients: Optional[List[str]] = None
+    excel_file_path: str  # Path to TBS Excel file
+    trigger_date: datetime  # When flow was triggered
+    email_recipients: List[str]  # Who receives the email
 
-    # Excel Processing Output (Crew 1)
-    raw_data: Dict[str, Any]  # Raw parsed Excel data
-    price_changes_categorized: Dict[str, Any]  # Organized by brewer → change type → products
-    # Structure: {
-    #   "LABATT": {
-    #     "Begin LTO": ["Budweiser 30C -$5.50 to $45.99 (increased depth...)"],
-    #     "End LTO": [...],
-    #     "Permanent Changes": [...]
-    #   },
-    #   "MOLSON": {...},
-    #   ...
-    # }
-    parsing_errors: List[str]
+    # Output
+    email_content: str  # Plain text email in template format
+    email_subject: str  # e.g., "TBS Price Change Summary - Nov 7, 2025"
+    email_metadata: Dict[str, Any]  # Stats, record count, etc.
+```
 
-    # Email Generation Output (Crew 2)
-    highlights_text: str  # Plain text version of highlights
-    email_html: str  # Final HTML email
-    email_subject: str  # Email subject line
-    email_metadata: Dict[str, Any]  # Additional metadata (date, record count, etc.)
+**Data Flow:**
+1. **Input:** Excel file path from trigger
+2. **Crew 1 Output:** Categorized price changes (internal variable)
+3. **Crew 2 Output:** Formatted email content → FlowState
+4. **Validation Output:** Quality checks (internal variable)
+5. **Final Output:** Files saved to `data/output/`
 
-    # Validation Output
-    validation_passed: bool
-    validation_report: Dict[str, Any]
+---
 
-    # Final Output
-    output_file_path: Optional[str] = None
+## Component Details
+
+### Crew 1: Excel Processor Crew
+
+**Purpose:** Parse Excel file, apply formula logic, and categorize price changes
+
+**Location:** `src/revman/crews/excel_processor_crew/`
+
+#### Agents
+
+**1. excel_parser_agent**
+- **Role:** Excel Data Parser Specialist
+- **Goal:** Parse TBS Excel file starting at row 7, extract all columns
+- **Key Skills:**
+  - Skip header rows (first 6 rows)
+  - Handle data type conversions
+  - Clean formatting issues
+  - Remove null rows
+
+**2. data_analyst_agent**
+- **Role:** Price Change Categorization Specialist
+- **Goal:** Apply Mark's formula logic and categorize by brewer/change type
+- **Key Skills:**
+  - Replicate Excel formula: `PROPER(Product) PackSize +/-$Change to $NewPrice`
+  - Categorize: Begin LTO (decreases), End LTO (increases), Permanent Changes
+  - Group by brewer (LABATT, MOLSON, SLEEMAN)
+  - Filter highlights (significant changes only)
+
+**3. data_validator_agent**
+- **Role:** Data Quality Validator
+- **Goal:** Ensure calculations are correct and data is complete
+- **Key Skills:**
+  - Verify: `Old Price - New Price = Change`
+  - Check Begin LTO has negative changes
+  - Check End LTO has positive changes
+  - Flag missing fields or outliers
+
+#### Tasks
+
+**Task 1: parse_excel_file**
+```yaml
+Agent: excel_parser_agent
+Input: {excel_file_path}
+Output: List of dictionaries with all product records
+Key Actions:
+  - Skip rows 1-6
+  - Extract columns A-M
+  - Clean and convert data types
+  - Return structured JSON
+```
+
+**Task 2: generate_formula_excel**
+```yaml
+Agent: excel_parser_agent
+Input: {excel_file_path}, {output_dir}
+Output: Path to generated Excel file with formulas
+Key Actions:
+  - Create copy of input Excel file
+  - Add formula to column N for each data row
+  - Formula: =PROPER($D{row})&" "&$H{row}&$L{row}&" "&$M{row}&"$"&ABS($K{row})
+  - Automatically adjust row numbers based on data start position
+  - Extract month/date from input filename
+  - Save as: "TBS Price Change Summary Report - {Month} {day}th'{YY}_formula.xlsx"
+  - Save to output directory
+Tools Used:
+  - FormulaExcelGeneratorTool
+Purpose:
+  - Provides Excel version with formulas for Mark to review
+  - Matches Mark's manual workflow of adding formulas
+  - Allows verification of formula calculations in Excel
+```
+
+**Task 3: analyze_price_changes**
+```yaml
+Agent: data_analyst_agent
+Input: Parsed data from Task 1
+Output: Categorized changes grouped by brewer and type
+Key Actions:
+  - Apply formula logic: PROPER(Product) + PackSize + +/-$Amount + to $NewPrice
+  - Categorize by change direction (Begin/End LTO)
+  - Group by brewer
+  - Filter significant changes (highlights only - 5% + $0.25 multiples)
+Format:
+  {
+    "LABATT": {
+      "Begin LTO": ["Budweiser 30C -$5.50 to $45.99", ...],
+      "End LTO": ["Bud Light 12C +$2 to $29.99", ...]
+    },
+    "MOLSON": {...},
+    "SLEEMAN": {...}
+  }
+```
+
+**Task 4: validate_data_quality**
+```yaml
+Agent: data_validator_agent
+Input: Parsed data + Categorized data
+Output: Validation report + Categorized data (passthrough)
+Key Actions:
+  - Check calculation accuracy
+  - Verify categorization logic
+  - Flag outliers (> $20 changes)
+  - Return BOTH validation report AND categorized data
+Critical: Must output categorized_data for next crew
 ```
 
 ---
 
-## 3. Detailed Component Design
+### Crew 2: Email Builder Crew
 
-### 3.1 Crew 1: Excel Processing Crew
+**Purpose:** Transform categorized data into formatted email template
 
-**Purpose**: Parse Excel file, extract data, perform calculations, and structure for email generation
+**Location:** `src/revman/crews/email_builder_crew/`
 
-**Location**: `src/revman/crews/excel_processor_crew/`
+#### Agent
 
-#### Agents (agents.yaml)
+**email_content_writer_agent**
+- **Role:** Price Change Highlights Writer
+- **Goal:** Generate email content in exact template format
+- **Key Skills:**
+  - Follow template structure precisely
+  - Title: "Highlights (Price Before Tax and Deposit)"
+  - Group by brewer → categorize by change type
+  - Format lines correctly
+
+#### Task
+
+**Task: write_highlights_content**
 ```yaml
-excel_parser_agent:
-  role: Excel Data Parser Specialist
-  goal: Parse the TBS Price Change Summary Excel file and extract clean, structured data with {record_count} records
-  backstory: Expert in handling complex Excel files with headers, formatting, and data validation.
-    Skilled in identifying data quality issues and cleaning datasets for downstream processing.
+Agent: email_content_writer_agent
+Input: {price_changes_categorized}
+Output: Plain text email content
 
-data_analyst_agent:
-  role: Price Change Categorization Specialist
-  goal: Categorize price changes by brewer and change type (LTO vs Permanent) with business context
-  backstory: ABI pricing strategy expert with deep understanding of Limited Time Offers (LTO),
-    competitive responses, and SCO mitigation tactics. Skilled at identifying strategic pricing moves,
-    categorizing changes by business purpose, and providing clear rationale for price adjustments.
+Structure:
+  1. Title: "Highlights (Price Before Tax and Deposit)"
+  2. For each brewer (LABATT, MOLSON, SLEEMAN):
+     - Brewer name as header
+     - Begin LTO section
+     - End LTO section
+     - Blank line between brewers
 
-data_validator_agent:
-  role: Data Quality Validator
-  goal: Ensure data integrity, validate calculations, and flag any anomalies or errors
-  backstory: Quality assurance specialist with expertise in data validation,
-    error detection, and ensuring data meets business rules and constraints.
-```
+Format: Plain text, NOT HTML
 
-#### Tasks (tasks.yaml)
-```yaml
-parse_excel_file:
-  description: |
-    Parse the Excel file at {excel_file_path} and extract all price change records.
-    - Skip header rows (first 6 rows)
-    - Extract all columns including SAP Art. No., Brewer, Product Name, Pack details, Old/New Prices
-    - Handle data type conversions (numbers, text, dates)
-    - Clean any formatting issues or special characters
-    - Return structured JSON with all records
-  expected_output: |
-    Structured JSON containing:
-    - List of all product records with complete column data
-    - Column metadata and data types
-    - Row count and data quality flags
-  agent: excel_parser_agent
-
-analyze_price_changes:
-  description: |
-    Analyze and categorize price change data for highlights email based on the actual template structure:
-
-    PRIMARY CATEGORIZATION:
-    1. Group all products by Brewer (e.g., LABATT, MOLSON, SLEEMAN)
-    2. Within each brewer, categorize changes by type:
-       - "Begin LTO" - Price decreases indicating start of Limited Time Offers
-       - "End LTO" - Price increases indicating end of Limited Time Offers
-       - "End LTO & Perm Change" - Combined LTO ending with permanent adjustment
-       - "Permanent Changes" - Ongoing price adjustments
-
-    FOR EACH PRODUCT:
-    - Calculate price change amount (+ or -)
-    - Determine final price
-    - Identify business context (competitive response, SCO mitigation, value positioning, etc.)
-    - Format as: "Product Name PackSize +/-$X.XX to $YY.YY (optional context)"
-
-    INTELLIGENT FILTERING:
-    - Focus on highlights only (significant changes, strategic moves)
-    - Not all products need to be included - curate based on business importance
-    - Prioritize larger changes and strategic pricing moves
-  expected_output: |
-    Structured categorization with:
-    - Products grouped by Brewer (LABATT, MOLSON, SLEEMAN, etc.)
-    - Within each brewer, sub-grouped by change type (Begin LTO, End LTO, etc.)
-    - Each product formatted as: "Product PackSize +/-$Amount to $FinalPrice (context)"
-    - Business context identified (competitive response, mitigation strategy, etc.)
-    - Only notable/significant changes included (highlights, not exhaustive list)
-    - Ready for direct insertion into email template
-  agent: data_analyst_agent
-  context:
-    - parse_excel_file
-
-validate_data_quality:
-  description: |
-    Validate data quality and integrity:
-    - Check for missing required fields
-    - Verify price calculations (Old Price - New Price = Change)
-    - Identify outliers or anomalies
-    - Flag any data quality issues
-    - Ensure all records are complete and accurate
-  expected_output: |
-    Validation report with:
-    - Pass/fail status for each validation check
-    - List of any errors or warnings
-    - Data quality score
-    - Recommendations for data corrections
-  agent: data_validator_agent
-  context:
-    - parse_excel_file
-    - analyze_price_changes
-```
-
-#### Custom Tools
-**File**: `src/revman/tools/excel_tools.py`
-
-```python
-# ExcelReaderTool
-- Parse Excel files with complex headers
-- Handle skiprows, data types, and formatting
-- Extract metadata (sheet names, dimensions)
-- Support for .xlsx and .xls formats
-
-# DataCleanerTool
-- Remove special characters and formatting
-- Standardize data types
-- Handle missing values
-- Normalize text fields
-
-# PriceCalculatorTool
-- Validate price calculations
-- Calculate percentage changes
-- Identify trends and patterns
-- Generate statistics
+Reference: If needed, agent can read data/templates/Output format.docx for detailed
+formatting examples and additional context on expected output structure
 ```
 
 ---
 
-### 3.2 Crew 2: Email Generation Crew
+### Light Validation Agent
 
-**Purpose**: Transform structured data into professional HTML email template
+**Purpose:** Final quality checks before saving
 
-**Location**: `src/revman/crews/email_builder_crew/`
+**Location:** Inline in `main.py` (not a full crew)
 
-#### Agents (agents.yaml)
-```yaml
-email_content_writer_agent:
-  role: Price Change Highlights Writer
-  goal: Transform categorized price change data into clear, concise highlights email following ABI format
-  backstory: Expert in ABI pricing communications with deep understanding of business context
-    (LTO strategy, competitive responses, SCO mitigation). Skilled at presenting price changes
-    in the standard "Highlights (Price Before Tax and Deposit)" format with appropriate business rationale.
+**Current Implementation:** Minimal validation
+- Check for required title: "Highlights (Price Before Tax and Deposit)"
+- Verify at least one brewer section exists
+- Check for change type sections (Begin LTO, End LTO)
 
-html_email_formatter_agent:
-  role: HTML Email Formatter
-  goal: Format the highlights content into clean, professional HTML email with ABI styling
-  backstory: Email formatting specialist who converts structured text into well-formatted HTML emails.
-    Experienced with simple, readable email layouts that work across all email clients.
-    Focuses on clarity and professional presentation over complex designs.
-```
-
-#### Tasks (tasks.yaml)
-```yaml
-write_highlights_content:
-  description: |
-    Transform the categorized price change data into the standard "Highlights" email format.
-
-    REQUIRED STRUCTURE:
-    1. Title: "Highlights (Price Before Tax and Deposit)"
-    2. For each Brewer (LABATT, MOLSON, SLEEMAN, etc.):
-       - Brewer name as header
-       - "Begin LTO" section with price decreases
-       - "End LTO" section with price increases
-       - "End LTO & Perm Change" section (if applicable)
-       - "Permanent Changes" section (if applicable)
-       - Empty line between sections
-
-    FORMAT EACH LINE:
-    Product PackSize +/-$Amount to $FinalPrice (optional context)
-    Examples:
-    - "Budweiser 30C -$5.50 to $45.99 (increased depth as a competitive response)"
-    - "Bud Light Lemon Lime 12C +$2 to $29.99 (end SCO mitigation)"
-    - "Corona 24B +$3 to $50.69"
-
-    BUSINESS CONTEXT:
-    Add context where appropriate explaining WHY the change is happening:
-    - "increased depth as a competitive response"
-    - "end SCO mitigation"
-    - Value positioning references (e.g., "Labatt Value at $23.49")
-    - Competitive benchmarking (e.g., "Ultra at $58.99")
-
-    Use the categorized data from: {price_changes_categorized}
-  expected_output: |
-    Structured text content ready for email:
-    - Title line
-    - Brewer sections (LABATT, MOLSON, SLEEMAN, etc.)
-    - Each section contains Begin LTO, End LTO, and Permanent Changes subsections
-    - Each product line properly formatted with price change and context
-    - Professional business tone with strategic rationale
-    - Plain text format (not HTML yet)
-  agent: email_content_writer_agent
-
-format_as_html_email:
-  description: |
-    Convert the highlights text content into a clean, professional HTML email.
-
-    REQUIREMENTS:
-    - Simple, readable HTML structure (not complex tables)
-    - Use clean typography and spacing
-    - Style brewer names as bold headers
-    - Style section headers (Begin LTO, End LTO, etc.) as subheaders
-    - Indent product lines for readability
-    - Use appropriate colors for price increases (+) and decreases (-)
-    - Add professional email header and footer
-    - Ensure mobile-responsive design
-    - Compatible with all major email clients
-
-    INPUT: Plain text highlights from previous task
-  expected_output: |
-    Complete HTML email with:
-    - Valid HTML structure with inline CSS
-    - Professional header with title
-    - Formatted brewer sections with proper hierarchy
-    - Color-coded price changes (red for increases, green for decreases)
-    - Clean spacing and readability
-    - Professional footer
-    - Subject line: "TBS Price Change Summary - [Date]"
-  agent: html_email_formatter_agent
-  context:
-    - write_highlights_content
-```
-
-#### Custom Tools
-**File**: `src/revman/tools/email_tools.py`
-
-```python
-# TextToHTMLFormatterTool
-- Convert structured plain text to HTML
-- Apply inline CSS styling for email compatibility
-- Handle ABI branding (colors, fonts, spacing)
-- Format sections with proper hierarchy (headers, subheaders, lists)
-- Color-code price increases (red) and decreases (green)
-
-# EmailValidatorTool
-- Validate HTML structure and syntax
-- Check email client compatibility
-- Verify all content is properly formatted
-- Test responsive design
-- Validate subject line and metadata
-```
+**Status:** ✅ Basic validation implemented, more comprehensive checks deferred to future phase
 
 ---
 
-### 3.3 Light Validation Agent
+## File Structure
 
-**Purpose**: Final validation before email output
-
-**Location**: `src/revman/main.py` (inline agent, not a full crew)
-
-#### Agent Configuration
-```python
-validation_agent = Agent(
-    role="Email Quality Validator",
-    goal="Perform final validation on the generated email to ensure it meets all quality standards",
-    backstory="""Quality assurance specialist who performs final checks on email templates
-    before delivery. Ensures data completeness, formatting correctness, and business rule compliance.""",
-    tools=[EmailValidatorTool(), HTMLLinterTool(), DataCompletenessCheckerTool()],
-    verbose=True
-)
-```
-
-#### Validation Checks
-1. **Data Completeness**
-   - All required fields populated
-   - No missing or null values in critical sections
-   - Record count matches input data
-
-2. **Business Rules**
-   - Price calculations are accurate
-   - Price change math is correct (Old - New = Change)
-   - Currency formatting is consistent
-   - Date formatting is correct
-
-3. **Template Formatting**
-   - Valid HTML structure
-   - All placeholders replaced
-   - Responsive design elements present
-   - Email client compatibility
-   - Links and images properly formatted
-   - Subject line length appropriate
-
-4. **Output Quality**
-   - Professional appearance
-   - Brand guidelines followed
-   - Clear and readable formatting
-   - Proper spacing and alignment
-
----
-
-## 4. File Structure Changes
-
-### New Directory Structure
-
-**Data Organization**: All data files are centralized in `revman/data/` with organized subfolders:
-- `data/input/` - Incoming Excel files (price change reports)
-- `data/output/` - Generated HTML emails and reports
-- `data/templates/` - Reference templates and documentation
-
-✅ **Status**: Data folder structure created and existing files organized (Nov 4, 2025)
+### Project Layout
 
 ```
-revman/                                  # Project root (standard Python project structure)
+revman/                                  # Project root
 ├── src/revman/
-│   ├── main.py                          # [MODIFY] Main Flow definition
+│   ├── main.py                          # Main Flow definition
 │   ├── crews/
-│   │   ├── poem_crew/                   # [REMOVE or ARCHIVE]
-│   │   ├── excel_processor_crew/        # [NEW] Crew 1
-│   │   │   ├── __init__.py
+│   │   ├── excel_processor_crew/        # Crew 1
 │   │   │   ├── excel_processor_crew.py
 │   │   │   └── config/
 │   │   │       ├── agents.yaml
 │   │   │       └── tasks.yaml
-│   │   └── email_builder_crew/          # [NEW] Crew 2
-│   │       ├── __init__.py
+│   │   └── email_builder_crew/          # Crew 2
 │   │       ├── email_builder_crew.py
 │   │       └── config/
 │   │           ├── agents.yaml
 │   │           └── tasks.yaml
 │   └── tools/
-│       ├── __init__.py
-│       ├── custom_tool.py               # [REMOVE or ARCHIVE]
-│       ├── excel_tools.py               # [NEW] Excel processing tools
-│       └── email_tools.py               # [NEW] Email generation tools
-├── data/                                # ✅ CREATED - All data in one place
-│   ├── input/                           # ✅ CREATED - Input Excel files
-│   │   └── TBS Price Change Summary Report - October 13th'25.xlsx  # ✅ MOVED
-│   ├── templates/                       # ✅ CREATED - Email templates
-│   │   └── Output format.docx           # ✅ MOVED
-│   └── output/                          # ✅ CREATED - Generated emails
-│       └── [generated emails will be saved here]
-├── tests/                               # [NEW] Test suite
-│   ├── test_excel_processor.py
-│   ├── test_email_builder.py
-│   ├── test_flow.py
-│   └── fixtures/
-│       └── sample_data.xlsx
-└── .env                                 # [UPDATE] Add new config vars
+│       ├── excel_tools.py               # (Future: Custom Excel tools)
+│       └── email_tools.py               # (Future: Email validation tools)
+├── data/
+│   ├── input/                           # Incoming Excel files
+│   │   └── TBS Price Change Summary Report - October 13th'25.xlsx
+│   ├── templates/                       # Reference templates
+│   │   ├── Output format.docx
+│   │   └── plan_md_template.md
+│   └── output/                          # Generated emails
+│       ├── price_change_email_2025-11-07.txt
+│       ├── price_change_email_2025-11-07_metadata.json
+│       └── price_change_email_2025-11-07_validation.json
+├── tests/                               # (Future: Test suite)
+├── .env                                 # Environment configuration
+└── pyproject.toml                       # Dependencies
 ```
 
-**Why this structure?**
-- ✅ All data centralized at `revman/data/` (not scattered)
-- ✅ Clear separation: input vs output vs templates
-- ✅ Standard Python project layout (data at root level alongside src/)
-- ✅ Easy to manage, backup, and .gitignore specific folders
-- ✅ Follows common conventions for data science/ML projects
+### File Path Configuration
+
+**In `main.py`:**
+```python
+# Define file paths using relative path from main.py
+# main.py is at: revman/src/revman/main.py
+# project_root is at: revman/
+
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DATA_DIR = Path(os.getenv('REVMAN_DATA_DIR', PROJECT_ROOT / "data"))
+INPUT_DIR = Path(os.getenv('REVMAN_INPUT_DIR', DATA_DIR / "input"))
+OUTPUT_DIR = Path(os.getenv('REVMAN_OUTPUT_DIR', DATA_DIR / "output"))
+TEMPLATE_DIR = Path(os.getenv('REVMAN_TEMPLATE_DIR', DATA_DIR / "templates"))
+```
 
 ---
 
-## 5. Implementation Steps
-
-### Phase 1: Project Setup & Cleanup
-1. **Archive/Remove Template Code**
-   - Move `poem_crew/` to `archive/` or delete
-   - Remove `custom_tool.py` template
-   - Clean up main.py
-
-2. **Update Dependencies**
-   - Add to `pyproject.toml`:
-     ```toml
-     dependencies = [
-         "crewai[tools]==1.2.0",
-         "pandas>=2.0.0",
-         "openpyxl>=3.1.0",
-         "python-docx>=1.0.0",
-         "jinja2>=3.1.0",
-         "lxml>=4.9.0",
-         "premailer>=3.10.0"  # For inline CSS in emails
-     ]
-     ```
-
-3. **Set Up Directory Structure**
-   - Create new crew directories
-   - Create tool directories
-   - Set up data/input, data/templates, data/output folders
-
-### Phase 2: Build Custom Tools
-**Priority: High** (Foundation for crews)
-
-1. **Excel Tools** (`tools/excel_tools.py`)
-   - ExcelReaderTool
-   - DataCleanerTool
-   - PriceCalculatorTool
-
-2. **Email Tools** (`tools/email_tools.py`)
-   - HTMLTemplateBuilderTool
-   - HTMLTableGeneratorTool
-   - EmailValidatorTool
-
-### Phase 3: Implement Crew 1 (Excel Processor)
-1. Create crew structure in `crews/excel_processor_crew/`
-2. Define agents in `config/agents.yaml`
-3. Define tasks in `config/tasks.yaml`
-4. Implement crew class in `excel_processor_crew.py`
-5. Test with sample Excel file
-
-### Phase 4: Implement Crew 2 (Email Builder)
-1. Create crew structure in `crews/email_builder_crew/`
-2. Define agents in `config/agents.yaml`
-3. Define tasks in `config/tasks.yaml`
-4. Implement crew class in `email_builder_crew.py`
-5. Test with mock data from Crew 1
-
-### Phase 5: Build Main Flow
-1. **Define Flow State Model** (RevManFlowState)
-
-2. **Implement Flow Methods**:
-   - `@start() trigger_flow()` - Initialize flow from trigger
-     * **For POC**: Accept file path as parameter (manual trigger)
-     * **For Phase 8**: Extract Excel from email (automatic trigger from aaditya.singhal@anheuser-busch.com with subject "test")
-     * Initialize state with excel_file_path, trigger_date
-     * Validate input file exists and is readable
-
-   - `@listen() excel_processing_step()` - Run Crew 1
-     * Execute Excel Processor Crew
-     * Populate state with: raw_data, price_changes, summary_stats
-     * Handle parsing errors gracefully
-
-   - `@listen() email_generation_step()` - Run Crew 2
-     * Execute Email Builder Crew
-     * Populate state with: email_html, email_subject, email_metadata
-     * Generate HTML email from processed data
-
-   - `@listen() validation_step()` - Run validation agent
-     * Validate data completeness, business rules, formatting
-     * Populate state with: validation_passed, validation_report
-     * Fail flow if critical validations don't pass
-
-   - `@listen() save_email_output()` - Save to disk
-     * Save HTML email to data/output/
-     * Save metadata and validation report
-     * Log completion status
-
-3. **Add Error Handling**:
-   - Try/catch blocks for each step
-   - State error tracking
-   - Graceful degradation
-   - Logging and monitoring
-
-### Phase 6: Implement Validation Agent
-1. Create light validation agent in main.py
-2. Implement validation tools
-3. Define validation checks (data, business rules, formatting)
-4. Create validation report structure
-
-### Phase 7: Testing & Refinement
-1. **Unit Tests**
-   - Test each tool independently
-   - Test agents with mock data
-   - Test tasks individually
-
-2. **Integration Tests**
-   - Test Crew 1 end-to-end
-   - Test Crew 2 end-to-end
-   - Test full flow with sample data
-
-3. **Validation Testing**
-   - Test validation agent with good data
-   - Test validation agent with bad data
-   - Verify error detection
-
-4. **Output Quality Testing**
-   - Review generated HTML emails
-   - Test in multiple email clients
-   - Verify responsive design
-   - Validate data accuracy
-
-### Phase 8: Email Trigger Integration (Future)
-**Note**: Defer to post-POC phase
-
-**Trigger Specification**:
-- **Sender Email**: aaditya.singhal@anheuser-busch.com
-- **Subject Line**: "test"
-- **Attachment**: Excel file (TBS Price Change Summary Report)
-- **Action**: Automatically trigger the RevMan flow when email is received
-
-**Implementation Steps**:
-1. **Set up email listener/webhook**
-   - Monitor mailbox for incoming emails
-   - Filter by sender: aaditya.singhal@anheuser-busch.com
-   - Filter by subject: "test"
-   - Options: IMAP polling, Microsoft Graph API, or email service webhook
-
-2. **Implement email attachment extraction**
-   - Extract Excel attachment from email
-   - Save to `data/input/` directory with timestamp
-   - Validate file type (.xlsx)
-   - Handle multiple attachments (if applicable)
-
-3. **Add trigger payload handling**
-   - Extract metadata from email (sender, date, subject)
-   - Construct trigger payload with file path
-   - Pass to Flow start node
-
-4. **Configure email sending (SMTP or API)**
-   - Send generated email template to recipients
-   - Use reply-to or configured recipient list
-   - Include original sender in CC/BCC if needed
-
-**Recommended Approach**: Microsoft Graph API (for ABI Office 365 integration)
-- More reliable than IMAP
-- Better security with OAuth 2.0
-- Access to full email metadata
-- Webhook support for real-time triggers
-
----
-
-## 6. Configuration Updates
+## Configuration
 
 ### Environment Variables (.env)
+
 ```bash
-# Existing
+# API Key
 ANTHROPIC_API_KEY=your_anthropic_key_here
 
-# Data directory configuration (relative to project root: revman/)
-REVMAN_INPUT_DIR=./data/input      # ✅ All Excel files stored here
-REVMAN_OUTPUT_DIR=./data/output    # ✅ Generated emails saved here
-REVMAN_TEMPLATE_DIR=./data/templates  # ✅ Reference templates stored here
+# Data Directories (relative to project root: revman/)
+REVMAN_DATA_DIR=./data
+REVMAN_INPUT_DIR=./data/input
+REVMAN_OUTPUT_DIR=./data/output
+REVMAN_TEMPLATE_DIR=./data/templates
 
-# Email Trigger Configuration (for Phase 8)
+# Email Trigger Configuration (Future Phase)
 # EMAIL_TRIGGER_ENABLED=false
-# EMAIL_TRIGGER_SENDER=aaditya.singhal@anheuser-busch.com
-# EMAIL_TRIGGER_SUBJECT=test
-# EMAIL_TRIGGER_MAILBOX=revman@abi.com
-# EMAIL_CHECK_INTERVAL_SECONDS=60
-
-# Email Output Configuration (for future use)
-# SMTP_HOST=smtp.abi.com
-# SMTP_PORT=587
-# SMTP_USER=revman@abi.com
-# SMTP_PASSWORD=<secure_password>
-# EMAIL_FROM=revman@abi.com
-# EMAIL_TO_DEFAULT=stakeholders@abi.com
-
-# Microsoft Graph API (Recommended for Office 365)
-# MS_GRAPH_TENANT_ID=<tenant_id>
-# MS_GRAPH_CLIENT_ID=<client_id>
-# MS_GRAPH_CLIENT_SECRET=<client_secret>
-# MS_GRAPH_MAILBOX=revman@abi.com
+# EMAIL_TRIGGER_SUBJECT=TBS process
+# EMAIL_TRIGGER_MAILBOX=mark@abi.com
 
 # Logging
 LOG_LEVEL=INFO
 LOG_FILE=./logs/revman.log
-
-# Flow configuration
-MAX_RETRIES=3
-TIMEOUT_SECONDS=300
 ```
 
-### Update pyproject.toml
-```toml
-[tool.crewai]
-project_type = "flow"
+### Dependencies (pyproject.toml)
 
-[project.scripts]
-revman = "revman.main:kickoff"
-revman-plot = "revman.main:plot"
-revman-trigger = "revman.main:run_with_trigger"
+```toml
+dependencies = [
+    "crewai[tools]>=0.86.0",
+    "pandas>=2.0.0",
+    "openpyxl>=3.1.0",
+    "python-docx>=1.0.0",
+]
 ```
 
 ---
 
-## 7. Sample Flow Execution
+## Execution
 
-### POC Mode (Manual Trigger - Phases 1-7)
+### Running the Flow
 
-**Trigger Method**: Manual execution with file path parameter
-
-**Command**:
+**Manual Trigger (Current POC):**
 ```bash
-crewai run_with_trigger '{"excel_file_path": "./data/input/TBS Price Change Summary Report - October 13th'\''25.xlsx", "trigger_date": "2025-10-06T00:00:00Z"}'
+# From project root: revman/
+crewai run
 ```
 
-**Trigger Payload**:
+This uses the default file path configured in `RevManFlowState`:
+```python
+excel_file_path: str = r"C:\Users\...\data\input\TBS Price Change Summary Report - October 13th'25.xlsx"
+```
+
+**With Custom Trigger Payload:**
+```bash
+crewai run_with_trigger '{"excel_file_path": "./data/input/file.xlsx", "trigger_date": "2025-11-07T00:00:00Z"}'
+```
+
+### Email Trigger (Future Phase)
+
+**Trigger Specification:**
+- **Subject:** "TBS process"
+- **Sender:** TBS (any email containing Excel attachment)
+- **Attachment:** Excel file (.xlsx)
+- **Action:** Automatically extract Excel, save to `data/input/`, trigger flow
+
+**Implementation Options:**
+1. IMAP email polling
+2. Microsoft Graph API (recommended for ABI Office 365)
+3. Email service webhook
+
+---
+
+## Output
+
+### Generated Files
+
+When the flow completes, it saves four files to `data/output/`:
+
+**1. Email Content (.txt)**
+```
+price_change_email_2025-11-07.txt
+```
+Plain text email in template format, ready to copy/paste into email client.
+
+**2. Formula Excel File (.xlsx)**
+```
+TBS Price Change Summary Report - October 13th'25_formula.xlsx
+```
+A copy of the input Excel file with formulas added to column N. The formula combines product information to create formatted price change text:
+- Formula: `=PROPER($D{row})&" "&$H{row}&$L{row}&" "&$M{row}&"$"&ABS($K{row})`
+- Automatically adjusts row numbers based on where data starts
+- Matches Mark's manual workflow of adding formulas in Excel
+- Can be opened directly in Excel to view calculated values
+
+**3. Metadata (.json)**
 ```json
 {
-  "excel_file_path": "./data/input/TBS Price Change Summary Report - October 13th'25.xlsx",
-  "trigger_date": "2025-10-06T00:00:00Z",
-  "email_recipients": ["stakeholder1@abi.com", "stakeholder2@abi.com"]
+  "subject": "TBS Price Change Summary - November 07, 2025",
+  "generated_at": "2025-11-07T14:23:45",
+  "trigger_date": "2025-11-07T00:00:00",
+  "input_file": "C:\\...\\data\\input\\TBS Price Change Summary Report - October 13th'25.xlsx",
+  "validation_passed": true,
+  "recipients": ["aaditya.singhal@anheuser-busch.com"]
 }
 ```
 
-### Phase 8 Mode (Email Trigger - Future)
-
-**Trigger Method**: Automatic execution when email received
-
-**Email Trigger Criteria**:
-- **From**: aaditya.singhal@anheuser-busch.com
-- **Subject**: "test"
-- **Attachment**: Excel file (*.xlsx)
-
-**Flow Behavior**:
-1. Email monitoring service detects incoming email matching criteria
-2. Extract Excel attachment and save to `./data/input/`
-3. Construct trigger payload automatically with extracted file path
-4. Execute flow automatically
-5. (Optional) Send generated email to configured recipients
-
-### Execution Steps (Both Modes)
-1. **Start** → Parse trigger, initialize state, validate file exists
-2. **Crew 1** → Parse Excel, analyze data, validate
-3. **Crew 2** → Generate email content, build HTML, create tables
-4. **Validation** → Check completeness, business rules, formatting
-5. **Save** → Write HTML email to `./data/output/price_change_email_2025-10-06.html`
-
-### Output Files
+**4. Validation Report (.json)**
+```json
+{
+  "validation_status": "PASS",
+  "quality_score": 100,
+  "critical_issues": [],
+  "warnings": []
+}
 ```
-data/output/
-├── price_change_email_2025-10-06.html           # Final HTML email
-├── price_change_email_2025-10-06_metadata.json  # Metadata & stats
-└── price_change_email_2025-10-06_report.json    # Validation report
+
+### Sample Output
+
+```
+Highlights (Price Before Tax and Deposit)
+
+LABATT
+Begin LTO
+Budweiser 30C -$5.50 to $45.99
+MSO 24C -$4 to $44.99
+Bud Light Lime 12C -$3 to $27.49
+
+End LTO
+Bud Light Lemon Lime 12C +$2 to $29.99
+Michelob Ultra 24B +$2.50 to $58.99
+
+Permanent Changes
+Bud Light 28B -$0.50 to $43.49
+
+MOLSON
+Begin LTO
+Coors Light 30C -$4 to $45.49
+Molson Canadian 24C -$3.50 to $42.99
+...
 ```
 
 ---
 
-## 8. Key Design Decisions
+## Testing & Validation
 
-### 1. Flow State vs File I/O
-**Decision**: Use Flow State (Pydantic model) to pass data between crews
-**Rationale**:
-- More efficient (no disk I/O overhead)
-- Type-safe with Pydantic validation
-- Easier to track state changes
-- Better for debugging and logging
+### Testing Approach
 
-### 2. Light Validation Agent (Not a Full Crew)
-**Decision**: Use a single agent for validation instead of a full crew
-**Rationale**:
-- Validation tasks are straightforward and don't require complex collaboration
-- Reduces overhead and execution time
-- Simpler to maintain
-- Appropriate for the scope of validation needed
+**Unit Testing (Future):**
+- Test Excel parser with sample files
+- Test formula logic accuracy
+- Test categorization rules
+- Test email formatting
 
-### 3. HTML Email Format
-**Decision**: Generate HTML emails (not plain text)
-**Rationale**:
-- Better presentation of tabular data
-- Professional appearance with branding
-- Support for styling and visual hierarchy
-- Industry standard for business communications
+**Integration Testing (Current):**
+- End-to-end flow execution with real TBS file
+- Manual review of generated email content
+- Verify format matches Mark's template
+- Check calculations against Excel formula
 
-### 4. Sequential Crew Execution
-**Decision**: Crews execute sequentially (not parallel)
-**Rationale**:
-- Clear dependency chain (Crew 2 needs Crew 1 output)
+### Validation Checks
+
+**Data Quality:**
+- ✅ All required columns present
+- ✅ No missing product names, prices, or brewers
+- ✅ Price calculations are correct (Old - New = Change)
+
+**Categorization:**
+- ✅ Begin LTO entries have negative changes
+- ✅ End LTO entries have positive changes
+- ✅ Products grouped correctly by brewer
+
+**Output Format:**
+- ✅ Title present: "Highlights (Price Before Tax and Deposit)"
+- ✅ Brewer sections exist (LABATT, MOLSON, SLEEMAN)
+- ✅ Change type sections present (Begin LTO, End LTO, etc.)
+- ✅ Line format matches: `Product PackSize +/-$X to $Y`
+
+---
+
+## Implementation Status
+
+### ✅ Completed (POC Phase)
+
+- [x] Flow architecture designed and implemented
+- [x] Excel Processor Crew with 3 agents
+- [x] Email Builder Crew with 1 agent
+- [x] Formula logic replicated in data_analyst_agent
+- [x] Plain text email generation
+- [x] Basic validation
+- [x] File output to data/output/
+- [x] Manual trigger via `crewai run`
+
+### 🚧 In Progress
+
+- [ ] Enhanced validation rules
+- [ ] Custom Excel tools for complex parsing
+- [ ] Error handling improvements
+
+### 📋 Future Enhancements
+
+**Phase 2: Email Integration**
+- [ ] Email trigger setup (subject: "TBS process")
+- [ ] Automatic Excel attachment extraction
+- [ ] Email sending capability
+- [ ] Recipient configuration
+
+**Phase 3: Advanced Features**
+- [ ] Historical comparison (current vs previous week)
+- [ ] Alert system for unusual price changes
+- [ ] Multiple output formats (HTML email option)
+- [ ] Approval workflow before sending
+
+**Phase 4: Analytics & Monitoring**
+- [ ] Dashboard for monitoring flow executions
+- [ ] Price change trend analysis
+- [ ] Performance metrics tracking
+- [ ] Audit logging
+
+---
+
+## Implementation Checklist
+
+This section documents the code changes required to align the current implementation with the plan requirements above.
+
+### Critical Priority (Must Fix - System Won't Run)
+
+#### 1. main.py - Add Missing Path Constants ⚠️ BLOCKING
+
+**File:** `src/revman/main.py`
+**Lines:** After line 19 (after imports)
+**Issue:** Code references `OUTPUT_DIR` at lines 268, 275, 289, 295 but it's never defined. System will crash when saving output.
+
+**Fix Required:**
+```python
+# Define file paths using relative path from main.py
+# main.py is at: revman/src/revman/main.py
+# project_root is at: revman/
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DATA_DIR = Path(os.getenv('REVMAN_DATA_DIR', PROJECT_ROOT / "data"))
+INPUT_DIR = Path(os.getenv('REVMAN_INPUT_DIR', DATA_DIR / "input"))
+OUTPUT_DIR = Path(os.getenv('REVMAN_OUTPUT_DIR', DATA_DIR / "output"))
+TEMPLATE_DIR = Path(os.getenv('REVMAN_TEMPLATE_DIR', DATA_DIR / "templates"))
+```
+
+---
+
+### Important Priority (Fix Core Logic/Output)
+
+#### 2. excel_processor_crew/config/tasks.yaml - Fix analyze_price_changes Task
+
+**File:** `src/revman/crews/excel_processor_crew/config/tasks.yaml`
+**Lines:** 35-97
+
+**Issues:**
+- ❌ Missing precise categorization rules (5% threshold, $0.25 multiples)
+- ❌ Includes "Permanent Changes" category (should be removed)
+- ❌ Instructs agent to add business context (should NOT add context)
+- ❌ Has "INTELLIGENT FILTERING" section (should use only categorization rules)
+
+**Required Changes:**
+
+**Lines 42-45** - Fix categorization logic:
+```yaml
+# OLD (WRONG):
+2. Within each brewer, categorize changes by type:
+   - "Begin LTO" - Price DECREASES indicating start of Limited Time Offers
+   - "End LTO" - Price INCREASES indicating end of Limited Time Offers
+   - "Permanent Changes" - Ongoing price adjustments (small changes, typically < $1)
+
+# NEW (CORRECT):
+2. Within each brewer, categorize changes using PRECISE rules:
+   - "Begin LTO" - Price DECREASES that are multiples of $0.25 AND reduce price by >5%
+   - "End LTO" - Price INCREASES that are multiples of $0.25 AND increase price by >5%
+   NOTE: These are the ONLY two categories. No other categories exist.
+```
+
+**Lines 50-61** - Remove business context and filtering:
+```yaml
+# REMOVE these lines entirely:
+- Identify business context when applicable:
+  * "increased depth as a competitive response" (large decreases)
+  * "end SCO mitigation" (price increases after promotion)
+  ...
+- Format as: "Product Name PackSize +/-$X.XX to $YY.YY (optional context)"
+
+INTELLIGENT FILTERING:
+- Focus on highlights only (significant changes, strategic moves)
+...
+
+# REPLACE with:
+FOR EACH PRODUCT:
+- Calculate: price_change_percent = abs((change_amount / old_price) * 100)
+- Check: is_quarter_multiple = (abs(change_amount) % 0.25) < 0.01
+- Categorize using 5% + $0.25 rules above
+- Format as: "Product Name PackSize +/-$X.XX to $YY.YY" (NO context)
+```
+
+**Lines 64-87** - Fix expected output format:
+```yaml
+# Remove all business context examples like:
+"Budweiser 30C -$5.50 to $45.99 (increased depth as a competitive response)"
+
+# Replace with simple format:
+"Budweiser 30C -$5.50 to $45.99"
+```
+
+#### 3. excel_processor_crew/config/agents.yaml - Update data_analyst_agent
+
+**File:** `src/revman/crews/excel_processor_crew/config/agents.yaml`
+**Lines:** 11-20
+
+**Issue:** Agent backstory mentions business context inference and vague categorization rules
+
+**Fix Required:**
+```yaml
+# OLD (Lines 13-20):
+goal: Categorize price changes by brewer and change type (LTO vs Permanent) with business context
+backstory: >
+  ABI pricing strategy expert with deep understanding of Limited Time Offers (LTO),
+  competitive responses, and SCO mitigation tactics...
+  You can infer business context from competitive positioning...
+
+# NEW:
+goal: Apply Mark's formula logic and categorize price changes using precise mathematical rules
+backstory: >
+  Expert in applying Mark's Excel formula to format price changes. Skilled at precise categorization
+  using the 5% threshold rule and $0.25 multiple detection. You understand that:
+  - Begin LTO: Price reductions that are multiples of $0.25 AND reduce total price by >5%
+  - End LTO: Price increases that are multiples of $0.25 AND increase total price by >5%
+  You format output as: PROPER(Product) PackSize +/-$Change to $NewPrice
+  You do NOT add business context or strategic commentary.
+```
+
+#### 4. email_builder_crew/config/tasks.yaml - Fix write_highlights_content Task
+
+**File:** `src/revman/crews/email_builder_crew/config/tasks.yaml`
+**Lines:** 1-62
+
+**Issues:**
+- ❌ Lists "Permanent Changes" section (should be removed)
+- ❌ Instructs agent to add business context (should NOT)
+
+**Required Changes:**
+
+**Lines 15-17** - Remove deprecated sections:
+```yaml
+# OLD:
+- "End LTO" section with price increases
+- "End LTO & Perm Change" section (if applicable)
+- "Permanent Changes" section (if applicable)
+
+# NEW:
+- "End LTO" section with price increases (>5%, $0.25 multiples)
+(Remove the other two lines)
+```
+
+**Lines 27-32** - Remove business context instructions:
+```yaml
+# REMOVE this entire section:
+BUSINESS CONTEXT:
+Add context where appropriate explaining WHY the change is happening:
+- "increased depth as a competitive response"
+...
+
+# REPLACE with:
+FORMAT RULES:
+- Use EXACT format: Product PackSize +/-$Amount to $FinalPrice
+- Do NOT add any business context, commentary, or explanatory notes
+- Present data cleanly without additional interpretation
+```
+
+#### 5. email_builder_crew/config/agents.yaml - Update email_content_writer_agent
+
+**File:** `src/revman/crews/email_builder_crew/config/agents.yaml`
+**Lines:** 1-11
+
+**Issue:** Backstory mentions business context and optional context in format
+
+**Fix Required:**
+```yaml
+# OLD (Lines 5-10):
+backstory: >
+  Expert in ABI pricing communications with deep understanding of business context
+  (LTO strategy, competitive responses, SCO mitigation)...
+  "Product PackSize +/-$Amount to $FinalPrice (optional context)".
+
+# NEW:
+backstory: >
+  Expert in formatting price change data into the standard "Highlights (Price Before Tax and Deposit)"
+  template. Skilled at organizing data by Brewer (LABATT, MOLSON, SLEEMAN) with subsections for
+  Begin LTO and End LTO. Each line follows the exact format:
+  "Product PackSize +/-$Amount to $FinalPrice" with NO additional context or commentary.
+```
+
+#### 6. tools/excel_tools.py - Fix PriceCalculatorTool Categorization Logic
+
+**File:** `src/revman/tools/excel_tools.py`
+**Lines:** 173-179
+
+**Issue:** Simple logic (just checks if positive/negative) - Missing 5% threshold and $0.25 multiple checks
+
+**Fix Required:**
+```python
+# OLD (Lines 173-179):
+if change_amount < 0:
+    direction = "decrease"
+    change_type = "Begin LTO"  # Price decreases indicate LTO start
+elif change_amount > 0:
+    direction = "increase"
+    change_type = "End LTO"  # Price increases indicate LTO end
+
+# NEW:
+# Calculate percentage change
+change_percent = abs((change_amount / old_price) * 100) if old_price != 0 else 0
+
+# Check if multiple of $0.25 (with float tolerance)
+is_quarter_multiple = (abs(change_amount) % 0.25) < 0.01
+
+# Determine category based on plan.md rules
+if change_amount < 0:
+    direction = "decrease"
+    if is_quarter_multiple and change_percent > 5:
+        change_type = "Begin LTO"
+    else:
+        change_type = "Not Categorized"  # Doesn't meet LTO criteria
+elif change_amount > 0:
+    direction = "increase"
+    if is_quarter_multiple and change_percent > 5:
+        change_type = "End LTO"
+    else:
+        change_type = "Not Categorized"  # Doesn't meet LTO criteria
+```
+
+#### 7. tools/email_tools.py - Remove HTML Formatter
+
+**File:** `src/revman/tools/email_tools.py`
+**Lines:** Entire file
+
+**Issue:** Contains `TextToHTMLFormatterTool` but plan.md says plain text only
+
+**Plan.md Decision (lines 617-625):**
+> Decision: Generate plain text email content, not HTML
+> Rationale: Matches Mark's current workflow (copy/paste into email)
+
+**Fix Required:**
+- Keep only `EmailValidatorTool`
+- Remove entire `TextToHTMLFormatterTool` class (currently ~200+ lines)
+- Update `EmailValidatorTool` to validate plain text instead of HTML
+
+#### 8. tools/__init__.py - Remove HTML Tool Export
+
+**File:** `src/revman/tools/__init__.py`
+**Lines:** 4
+
+**Issue:** Exports `TextToHTMLFormatterTool` which should be removed
+
+**Fix Required:**
+```python
+# OLD:
+from .email_tools import TextToHTMLFormatterTool, EmailValidatorTool
+
+# NEW:
+from .email_tools import EmailValidatorTool
+
+# Update __all__:
+__all__ = [
+    "ExcelReaderTool",
+    "DataCleanerTool",
+    "PriceCalculatorTool",
+    "EmailValidatorTool",
+]
+```
+
+#### 9. main.py - Add Validation for Deprecated Sections
+
+**File:** `src/revman/main.py`
+**Lines:** After line 219 in validation_step()
+
+**Issue:** Validation doesn't check for deprecated sections
+
+**Fix Required:**
+```python
+# Add after line 219:
+
+# Check for deprecated sections that should not exist
+if "Permanent Changes" in content or "End LTO & Perm Change" in content:
+    validation_data["warnings"].append(
+        "Found deprecated section: 'Permanent Changes' or 'End LTO & Perm Change'. "
+        "Only 'Begin LTO' and 'End LTO' sections should exist per plan.md."
+    )
+```
+
+---
+
+### Nice-to-Have Priority (Cleanup)
+
+#### 10. main.py - Fix Hardcoded Path
+
+**File:** `src/revman/main.py`
+**Line:** 27
+
+**Issue:** Uses absolute hardcoded path instead of INPUT_DIR constant
+
+**Fix Required:**
+```python
+# OLD:
+excel_file_path: str = r"C:\Users\Y946107\OneDrive - Anheuser-Busch InBev\FY25\Personal git repo\RevMan-POC-Crew\revman\data\input\TBS Price Change Summary Report - October 13th'25.xlsx"
+
+# NEW:
+excel_file_path: str = str(INPUT_DIR / "TBS Price Change Summary Report - October 13th'25.xlsx")
+```
+
+#### 11. main.py - Fix Phase Number Comment
+
+**File:** `src/revman/main.py`
+**Line:** 55
+
+**Issue:** Comment says "Phase 8" but plan.md calls it "Phase 2"
+
+**Fix Required:**
+```python
+# OLD:
+For Phase 8: Extract Excel from email (automatic trigger)
+
+# NEW:
+For Phase 2: Extract Excel from email (automatic trigger)
+```
+
+---
+
+### Implementation Order
+
+Execute changes in this order to avoid breaking the system:
+
+1. ✅ **FIRST** - Fix main.py path constants (item #1) - CRITICAL
+2. ✅ Update excel_processor_crew tasks.yaml (item #2)
+3. ✅ Update excel_processor_crew agents.yaml (item #3)
+4. ✅ Update email_builder_crew tasks.yaml (item #4)
+5. ✅ Update email_builder_crew agents.yaml (item #5)
+6. ✅ Fix tools/excel_tools.py (item #6)
+7. ✅ Cleanup tools/email_tools.py (item #7)
+8. ✅ Update tools/__init__.py (item #8)
+9. ✅ Update main.py validation (item #9)
+10. ✅ Cleanup main.py path and comments (items #10, #11)
+
+---
+
+### Files That Don't Need Changes
+
+✅ **excel_processor_crew/excel_processor_crew.py** - Implementation correct
+✅ **email_builder_crew/email_builder_crew.py** - Implementation correct
+✅ **data_validator_agent** - Kept as placeholder (minimal validation only, comprehensive validation deferred to future phase)
+✅ **.env** - Configuration correct
+✅ **Task structure** - Sequential flow correct
+
+---
+
+## Key Design Decisions
+
+### 1. Formula Replication via AI Agents
+
+**Decision:** Use AI agents to replicate Mark's Excel formula logic rather than directly executing Excel formulas
+
+**Rationale:**
+- More flexible - can add business context and intelligence
+- Easier to maintain and modify logic
+- Can handle edge cases better than rigid formulas
+- Enables future enhancements (comparative analysis, anomaly detection)
+
+**How It Works:**
+The `data_analyst_agent` understands the formula pattern and generates equivalent output:
+```
+Excel Formula: =PROPER($D9)&" "&$H9&$L9&" "&$M9&"$"&ABS($K9)&" to $"&$J9
+Agent Output:  Budweiser 30C -$5.50 to $45.99
+```
+
+### 2. Plain Text Email (Not HTML)
+
+**Decision:** Generate plain text email content, not HTML
+
+**Rationale:**
+- Matches Mark's current workflow (copy/paste into email)
+- Simpler to validate and test
+- Easier to modify manually if needed
+- Can add HTML formatting in future phase if requested
+
+### 3. Sequential Crew Execution
+
+**Decision:** Crews execute sequentially in order
+
+**Rationale:**
+- Clear dependency: Crew 2 needs Crew 1 output
 - Easier to debug and monitor
+- Matches CrewAI Flow @listen pattern
 - Predictable execution flow
-- Matches current Process.sequential pattern
+
+### 4. Minimal Validation (Current Phase)
+
+**Decision:** Keep validation simple for POC
+
+**Rationale:**
+- Focus on core functionality first
+- Can enhance validation incrementally
+- Basic checks catch major issues
+- Comprehensive validation deferred to Phase 2
+
+### 5. File-Based Output
+
+**Decision:** Save to local files instead of sending email immediately
+
+**Rationale:**
+- Safer for POC - human can review before sending
+- Enables testing without spam risk
+- Easy to integrate email sending later
+- Provides audit trail
 
 ---
 
-## 9. Testing Strategy
+## Success Metrics
 
-### Unit Testing
-- **Tools**: Test each custom tool with sample inputs
-- **Agents**: Mock agent responses for predictability
-- **Tasks**: Test task execution with fixtures
+### Performance Targets
 
-### Integration Testing
-- **Crew 1**: Test with real Excel file from data/input
-- **Crew 2**: Test with mock Crew 1 output
-- **Full Flow**: End-to-end test with complete data pipeline
-
-### Validation Testing
-- **Happy Path**: Valid Excel → Valid Email
-- **Error Cases**:
-  - Malformed Excel file
-  - Missing data
-  - Invalid calculations
-  - Template generation failures
-
-### Output Quality Testing
-- Manual review of generated emails
-- Email client rendering tests (Gmail, Outlook, Apple Mail)
-- Responsive design verification
-- Data accuracy spot checks
-
----
-
-## 10. Future Enhancements (Post-POC)
-
-### Email Trigger Integration
-1. Set up email inbox monitoring
-2. Extract Excel attachments automatically
-3. Trigger flow on email receipt
-4. Send generated email automatically
-
-### Advanced Features
-1. **Multi-file Support**: Process multiple Excel files in one run
-2. **Comparison Mode**: Compare current vs previous price changes
-3. **Alert System**: Flag unusual price changes or anomalies
-4. **Dashboard**: Web UI to monitor flow executions
-5. **Template Customization**: Multiple email templates for different audiences
-6. **Scheduling**: Automated periodic runs
-7. **Approval Workflow**: Review/approve before sending
-8. **Analytics**: Track price change trends over time
-
-### Performance Optimizations
-1. Parallel task execution where possible
-2. Caching of template components
-3. Batch processing for large datasets
-4. Async operations for I/O
-
----
-
-## 11. Risk Mitigation
-
-### Technical Risks
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Excel format changes | High | Add robust parsing with fallbacks; version detection |
-| Data quality issues | Medium | Comprehensive validation; error reporting |
-| HTML rendering issues | Medium | Test across email clients; use email-safe HTML |
-| Long execution times | Low | Add timeouts; monitor performance; optimize tools |
-| API rate limits (Anthropic) | Medium | Implement retry logic; use efficient prompts |
-
-### Operational Risks
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Missing input files | High | Validate file existence before processing |
-| Incorrect data transformations | High | Comprehensive testing; validation checks |
-| Email delivery failures | Medium | Defer to Phase 8; add retry mechanisms |
-
----
-
-## 12. Success Criteria
-
-### MVP (Minimum Viable Product)
-- [ ] Successfully parse TBS Excel file
-- [ ] Extract all price change records
-- [ ] Calculate summary statistics
-- [ ] Generate professional HTML email
-- [ ] Include properly formatted price change table
-- [ ] Pass all validation checks
-- [ ] Save email to local directory
-- [ ] Complete execution in < 5 minutes
+- **Execution Time:** < 2 minutes (vs 30-45 minutes manual)
+- **Accuracy:** 100% (formula output matches Excel)
+- **Format Compliance:** 100% (matches template exactly)
+- **Automation Rate:** 100% (zero manual intervention)
 
 ### Quality Metrics
-- [ ] 100% data accuracy (no calculation errors)
-- [ ] Email renders correctly in 3+ major clients
-- [ ] Validation catches all major data issues
-- [ ] Code coverage > 80%
-- [ ] Zero critical bugs in testing
+
+- ✅ Zero calculation errors
+- ✅ All brewers properly categorized
+- ✅ Correct Begin/End LTO classification
+- ✅ Proper line formatting
+- ✅ Complete data coverage (no missing products)
 
 ---
 
-## 13. Timeline Estimate
+## Troubleshooting
 
-| Phase | Duration | Dependencies |
-|-------|----------|--------------|
-| 1. Project Setup | 1-2 hours | None |
-| 2. Build Tools | 4-6 hours | Phase 1 |
-| 3. Crew 1 Implementation | 3-4 hours | Phase 2 |
-| 4. Crew 2 Implementation | 3-4 hours | Phase 2 |
-| 5. Main Flow | 2-3 hours | Phases 3 & 4 |
-| 6. Validation Agent | 2-3 hours | Phase 5 |
-| 7. Testing & Refinement | 4-6 hours | Phases 1-6 |
-| 8. Email Trigger (Future) | TBD | Post-POC |
+### Common Issues
 
-**Total POC Estimate**: 19-28 hours (2.5 - 3.5 work days)
+**Issue 1: Excel file not found**
+```
+Error: FileNotFoundError
+Solution: Check excel_file_path in RevManFlowState or trigger payload
+```
 
----
+**Issue 2: Empty email output**
+```
+Cause: No price changes in data or parsing error
+Solution: Check validation report for errors, review Excel structure
+```
 
-## 14. Open Questions & Clarifications Needed
+**Issue 3: Missing brewer sections**
+```
+Cause: Categorization agent didn't find products for that brewer
+Solution: Verify brewer names in Excel match expected values (LABATT, MOLSON, SLEEMAN)
+```
 
-### 1. Email Template Design
-**Question**: Do you have specific ABI branding guidelines, logos, or color schemes to use?
-**Action**: Need brand assets and style guide
-
-### 2. Word Document Template
-**Question**: The "Output format.docx" file couldn't be read (permission error). Can you share its contents or describe the expected email layout?
-**Action**: Need to review Word doc or get description of email structure
-
-### 3. Email Recipients
-**Question**: Who should receive these emails? Should recipients be configurable?
-**Action**: Define recipient list and configuration approach
-
-### 4. Data Refresh Frequency
-**Question**: How often will this flow run? Daily? Weekly? Ad-hoc?
-**Action**: Understand scheduling requirements
-
-### 5. Historical Data
-**Question**: Should we compare current prices to historical data or just show current changes?
-**Action**: Clarify if historical tracking is needed
-
-### 6. Error Notifications
-**Question**: If the flow fails, who should be notified and how?
-**Action**: Define error notification strategy
-
-### 7. Approval Process
-**Question**: Should the email be reviewed/approved before sending, or is automated sending acceptable?
-**Action**: Clarify workflow and approval requirements
+**Issue 4: Formula format doesn't match**
+```
+Cause: data_analyst_agent needs clearer instructions
+Solution: Review task description in tasks.yaml, add examples
+```
 
 ---
 
-## 15. Next Steps
+## Next Steps
 
 ### Immediate Actions
-1. **Review this plan** with stakeholders
-2. **Answer open questions** (Section 14)
-3. **Obtain Word document template** (or provide description)
-4. **Provide ABI branding assets** (logos, colors, fonts)
-5. **Approve architecture and approach**
 
-### Once Approved
-1. Begin Phase 1 (Project Setup)
-2. Implement custom tools (Phase 2)
-3. Build Crew 1 (Phase 3)
-4. Iterative development following phases 4-7
+1. **Test with new TBS file** - Validate flow works with latest weekly data
+2. **Review output quality** - Compare generated email to Mark's manual version
+3. **Gather stakeholder feedback** - Show output to email recipients
+4. **Document any edge cases** - Track issues for enhancement
 
----
+### Phase 2 Planning
 
-## 16. Additional Notes
-
-### Why This Approach?
-- **Modular**: Each crew and tool has a single responsibility
-- **Testable**: Clear interfaces make testing straightforward
-- **Maintainable**: Configuration-driven design eases updates
-- **Scalable**: Can add more crews or enhance existing ones
-- **Follows Best Practices**: Aligns with CrewAI Flow patterns and Python standards
-
-### Alternative Approaches Considered
-1. **Single Crew**: Simpler but less modular; harder to test and maintain
-2. **File-based Communication**: More debuggable but slower and less type-safe
-3. **Parallel Crew Execution**: Not applicable due to dependencies
+1. **Email trigger setup** - Design email monitoring approach
+2. **Attachment extraction** - Build logic to extract Excel from email
+3. **Auto-send capability** - Configure SMTP or email API
+4. **Enhanced validation** - Add comprehensive quality checks
 
 ---
 
 ## Contact & Support
-For questions or clarifications about this plan, please reach out to the development team.
 
-**Plan Version**: 1.0
-**Date**: November 4, 2025
-**Status**: Draft - Awaiting Approval
+**Project:** RevMan TBS Price Change Automation
+**Owner:** Mark (Revenue Management)
+**Technical Contact:** Aaditya Singhal (aaditya.singhal@anheuser-busch.com)
+
+**Documentation:**
+- Implementation Plan: `revman/plan.md` (this document)
+- Configuration: `revman/.env`
+- Crew Definitions: `src/revman/crews/*/config/`
+
+---
+
+**Plan Version:** 2.0
+**Date:** November 7, 2025
+**Status:** Active - POC Phase Complete

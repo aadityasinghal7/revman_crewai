@@ -1,6 +1,8 @@
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
+from revman.tools import ExcelReaderTool, DataCleanerTool, PriceCalculatorTool, FormulaExcelGeneratorTool
+
 
 @CrewBase
 class ExcelProcessorCrew:
@@ -14,7 +16,8 @@ class ExcelProcessorCrew:
         return Agent(
             config=self.agents_config["excel_parser_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            verbose=True,
+            tools=[ExcelReaderTool(), DataCleanerTool(), FormulaExcelGeneratorTool()],
+            verbose=False,  # Disabled for performance - timing tracked in main.py
         )
 
     @agent
@@ -22,7 +25,8 @@ class ExcelProcessorCrew:
         return Agent(
             config=self.agents_config["data_analyst_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            verbose=False,
+            tools=[PriceCalculatorTool(), ExcelReaderTool()],
+            verbose=False,  # Disabled for performance - timing tracked in main.py
         )
 
     @agent
@@ -30,13 +34,19 @@ class ExcelProcessorCrew:
         return Agent(
             config=self.agents_config["data_validator_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            verbose=True,
+            verbose=False,  # Disabled for performance - timing tracked in main.py
         )
 
     @task
     def parse_excel_file(self) -> Task:
         return Task(
             config=self.tasks_config["parse_excel_file"],
+        )
+
+    @task
+    def generate_formula_excel(self) -> Task:
+        return Task(
+            config=self.tasks_config["generate_formula_excel"],
         )
 
     @task
@@ -58,5 +68,5 @@ class ExcelProcessorCrew:
             agents=self.agents,  # Automatically includes all @agent decorated methods
             tasks=self.tasks,  # Automatically includes all @task decorated methods
             process=Process.sequential,
-            verbose=False,
+            verbose=False,  # Disabled for performance - timing tracked in main.py
         )

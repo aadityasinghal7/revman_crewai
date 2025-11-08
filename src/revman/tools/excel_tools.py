@@ -5,6 +5,10 @@ from pathlib import Path
 from typing import Any, Dict, List
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
+import openpyxl
+from openpyxl.utils import get_column_letter
+import re
+import os
 
 
 class ExcelReaderInput(BaseModel):
@@ -167,19 +171,33 @@ class PriceCalculatorTool(BaseTool):
             else:
                 change_percent = 0
 
-            # Determine direction and type
+            # Calculate absolute percentage change
+            abs_change_percent = abs(change_percent)
+
+            # Check if multiple of $0.25 (with float comparison tolerance)
+            is_quarter_multiple = (abs(change_amount) % 0.25) < 0.01
+
+            # Determine direction and type based on plan.md rules:
+            # - Begin LTO: decrease AND is_quarter_multiple AND >5%
+            # - End LTO: increase AND is_quarter_multiple AND >5%
             if change_amount < 0:
                 direction = "decrease"
-                change_type = "Begin LTO"  # Price decreases indicate LTO start
+                if is_quarter_multiple and abs_change_percent > 5:
+                    change_type = "Begin LTO"
+                else:
+                    change_type = "Not Categorized"  # Doesn't meet LTO criteria
             elif change_amount > 0:
                 direction = "increase"
-                change_type = "End LTO"  # Price increases indicate LTO end
+                if is_quarter_multiple and abs_change_percent > 5:
+                    change_type = "End LTO"
+                else:
+                    change_type = "Not Categorized"  # Doesn't meet LTO criteria
             else:
                 direction = "no change"
                 change_type = "No Change"
 
-            # Determine if it's a significant change
-            is_significant = abs(change_amount) >= 2.0
+            # Determine if it's significant (meets LTO criteria)
+            is_significant = is_quarter_multiple and abs_change_percent > 5
 
             result = {
                 "success": True,
@@ -198,3 +216,114 @@ class PriceCalculatorTool(BaseTool):
 
         except Exception as e:
             return f"Error calculating price change: {str(e)}"
+
+
+class FormulaExcelGeneratorInput(BaseModel):
+    """Input schema for FormulaExcelGeneratorTool"""
+    input_file_path: str = Field(..., description="Path to the input Excel file")
+    output_dir: str = Field(..., description="Directory where the formula Excel file will be saved")
+    skip_rows: int = Field(6, description="Number of header rows to skip before data starts (default: 6 for TBS reports)")
+    formula_column: str = Field("N", description="Column letter where formula should be added (default: N)")
+
+
+class FormulaExcelGeneratorTool(BaseTool):
+    name: str = "Formula Excel Generator"
+    description: str = (
+        "Creates a copy of the input Excel file with formulas added to generate formatted price change text. "
+        "The formula combines product name, pack size, and price change information. "
+        "Output file is saved with '_formula.xlsx' suffix using the same month/date from the input filename."
+    )
+    args_schema: type[BaseModel] = FormulaExcelGeneratorInput
+
+    def _run(self, input_file_path: str, output_dir: str, skip_rows: int = 6, formula_column: str = "N") -> str:
+        """
+        Generate Excel file with formulas added
+
+        Args:
+            input_file_path: Path to input Excel file
+            output_dir: Directory to save output file
+            skip_rows: Number of header rows to skip (default 6)
+            formula_column: Column to add formula (default N)
+
+        Returns:
+            JSON string with result information
+        """
+        try:
+            import json
+            from datetime import datetime
+
+            # Validate input file exists
+            input_path = Path(input_file_path)
+            if not input_path.exists():
+                return json.dumps({"success": False, "error": f"Input file not found: {input_file_path}"})
+
+            # Extract month and date from input filename
+            # Expected pattern: "TBS Price Change Summary Report - Month XXth'YY.xlsx"
+            filename = input_path.stem  # Get filename without extension
+
+            # Extract the date portion (e.g., "October 13th'25")
+            match = re.search(r'-\s*(.+?)\.xlsx', input_path.name)
+            if not match:
+                # Fallback: try to extract just the date part
+                match = re.search(r'([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)\'?\d{2})', filename)
+
+            if match:
+                date_part = match.group(1).strip()
+            else:
+                # Fallback: use current date
+                date_part = datetime.now().strftime("%B %d'%y")
+
+            # Construct output filename
+            output_filename = f"TBS Price Change Summary Report - {date_part}_formula.xlsx"
+            output_path = Path(output_dir) / output_filename
+
+            # Ensure output directory exists
+            os.makedirs(output_dir, exist_ok=True)
+
+            # Load the workbook
+            wb = openpyxl.load_workbook(input_file_path)
+            ws = wb.active
+
+            # Calculate data start row (1-indexed for openpyxl)
+            # skip_rows is the number of rows before headers, data typically starts 1 row after
+            data_start_row = skip_rows + 2  # +1 for header row, +1 for first data row
+
+            # Find the last row with data
+            max_row = ws.max_row
+
+            # Add formulas to each data row
+            formula_count = 0
+            for row_num in range(data_start_row, max_row + 1):
+                # Check if row has data (check if column A has value)
+                if ws[f'A{row_num}'].value is None:
+                    continue
+
+                # Formula: =PROPER($D{row})&" "&$H{row}&$L{row}&" "&$M{row}&"$"&ABS($K{row})&" to $"&$J{row}
+                formula = f'=PROPER($D{row_num})&" "&$H{row_num}&$L{row_num}&" "&$M{row_num}&"$"&ABS($K{row_num})&" to $"&$J{row_num}'
+
+                # Add formula to the specified column
+                ws[f'{formula_column}{row_num}'] = formula
+                formula_count += 1
+
+            # Save the workbook
+            wb.save(output_path)
+
+            result = {
+                "success": True,
+                "input_file": str(input_path),
+                "output_file": str(output_path),
+                "output_filename": output_filename,
+                "formulas_added": formula_count,
+                "data_start_row": data_start_row,
+                "formula_column": formula_column,
+                "message": f"Successfully created formula Excel file with {formula_count} formulas"
+            }
+
+            return json.dumps(result, indent=2)
+
+        except Exception as e:
+            import json
+            return json.dumps({
+                "success": False,
+                "error": f"Error generating formula Excel: {str(e)}"
+            }, indent=2)

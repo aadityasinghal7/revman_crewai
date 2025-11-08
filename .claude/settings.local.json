@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:docs.crewai.com)",
-      "Bash(crewai run)"
+      "Bash(crewai run)",
+      "Bash(python examine_formula_detailed.py:*)",
+      "Bash(python:*)",
+      "WebSearch",
+      "WebFetch(domain:help.crewai.com)",
+      "Bash(dir:*)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []

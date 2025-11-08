@@ -14,7 +14,7 @@ class EmailBuilderCrew:
         return Agent(
             config=self.agents_config["email_content_writer_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            verbose=True,
+            verbose=False,  # Disabled for performance - timing tracked in main.py
         )
 
     @task
