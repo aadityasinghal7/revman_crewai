@@ -1,0 +1,3 @@
+Baseline Capture: 2025-11-09T15:40:13.095703
+Captured files: excel, email, metadata, validation
+Missing files: 
