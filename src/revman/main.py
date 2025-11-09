@@ -145,6 +145,12 @@ class RevManFlow(Flow[RevManFlowState]):
             "aaditya.singhal@anheuser-busch.com"
         ).split(",")  # Support comma-separated list
 
+        # === NEW: Update state metadata for platform visibility ===
+        self.state.trigger_date = self._trigger_date.isoformat()
+        self.state.email_recipients = self._email_recipients
+        self.state.flow_status = "RUNNING"
+        # === END NEW ===
+
         print("\n" + "=" * 60)
         print("[START] RevMan Price Change Flow Started")
         print("=" * 60)
@@ -264,6 +270,22 @@ class RevManFlow(Flow[RevManFlowState]):
             if self._effective_date is None:
                 self._effective_date = self._trigger_date
                 print(f"[WARNING] Using trigger date as fallback for effective date")
+
+            # === NEW: Update state for platform visibility ===
+            # Populate state fields with extracted data (additive - no behavior change)
+            if self._effective_date:
+                self.state.effective_date = self._effective_date.isoformat()
+                self.state.effective_date_display = self._effective_date.strftime('%B %d, %Y')
+
+            self.state.price_changes_categorized = self._price_changes_categorized
+            self.state.validation_info = getattr(self, '_validation_info', None)
+
+            # Find Excel output path from OUTPUT_DIR
+            excel_output_file = OUTPUT_DIR / f"{Path(self.state.excel_file_path).stem}_formula.xlsx"
+            if excel_output_file.exists():
+                self.state.excel_output_path = str(excel_output_file)
+                print(f"[OK] State updated for platform visibility")
+            # === END NEW ===
 
         except Exception as e:
             error_msg = f"Error in Excel processing: {str(e)}"
