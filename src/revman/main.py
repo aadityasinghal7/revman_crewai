@@ -31,10 +31,41 @@ TEMPLATE_DIR = Path(os.getenv('REVMAN_TEMPLATE_DIR', DATA_DIR / "templates"))
 
 
 class RevManFlowState(BaseModel):
-    """State model for RevMan Price Change Flow - Only user-provided inputs"""
+    """State model for RevMan Price Change Flow
 
-    # User input - the only field required at kickoff
+    Stores both user inputs and flow outputs for platform visibility.
+    All output fields are Optional and populated during flow execution.
+    """
+
+    # ===== USER INPUT (Required) =====
     excel_file_path: str = "TBS Price Change Summary Report - October 13th'25.xlsx"
+
+    # ===== EXCEL PROCESSING OUTPUTS (Step 1) =====
+    excel_output_path: Optional[str] = None  # Path to Excel with formulas added
+    effective_date: Optional[str] = None  # ISO format: "2025-10-13"
+    effective_date_display: Optional[str] = None  # Display format: "October 13, 2025"
+    price_changes_categorized: Optional[Dict[str, Any]] = None  # Categorized price data
+    validation_info: Optional[Dict[str, Any]] = None  # Initial data validation from Excel crew
+
+    # ===== EMAIL GENERATION OUTPUTS (Step 2) =====
+    email_content: Optional[str] = None  # Generated email body (plain text)
+    email_subject: Optional[str] = None  # Generated email subject line
+
+    # ===== VALIDATION OUTPUTS (Step 3) =====
+    validation_status: Optional[str] = None  # "PASS", "FAIL", or "PASS WITH WARNINGS"
+    validation_score: Optional[int] = None  # 0-100 quality score
+    validation_issues: Optional[List[str]] = None  # Critical issues found
+    validation_warnings: Optional[List[str]] = None  # Non-critical warnings
+
+    # ===== FINAL ARTIFACTS (Step 4) =====
+    output_email_path: Optional[str] = None  # Path to saved email .txt file
+    output_metadata_path: Optional[str] = None  # Path to email metadata JSON
+    output_validation_path: Optional[str] = None  # Path to validation report JSON
+
+    # ===== FLOW METADATA =====
+    trigger_date: Optional[str] = None  # ISO format timestamp of flow start
+    email_recipients: Optional[List[str]] = None  # Email recipient list
+    flow_status: Optional[str] = "INITIALIZED"  # INITIALIZED -> RUNNING -> COMPLETED/FAILED
 
 
 class RevManFlow(Flow[RevManFlowState]):
