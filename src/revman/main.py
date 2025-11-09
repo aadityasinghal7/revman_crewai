@@ -184,13 +184,23 @@ class RevManFlow(Flow[RevManFlowState]):
         self._step_times['trigger_validation'] = step_duration
         print(f"[TIMING] Trigger validation: {self._format_duration(step_duration)}\n")
 
+        # === NEW: Return config for next step (automatic data passing) ===
+        return {
+            "excel_file_path": self.state.excel_file_path,
+            "output_dir": str(OUTPUT_DIR),
+        }
+        # === END NEW ===
+
     @listen(trigger_flow)
-    def excel_processing_step(self):
+    def excel_processing_step(self, trigger_config=None):
         """
         Run Excel Processor Crew (Crew 1)
         - Parse Excel file
         - Analyze and categorize price changes
         - Validate data quality
+
+        Args:
+            trigger_config: Config dict from trigger_flow (automatic from @listen)
         """
         step_start = time.time()
 
@@ -199,13 +209,21 @@ class RevManFlow(Flow[RevManFlowState]):
         print("-" * 60)
 
         try:
+            # Use trigger_config if available, fallback to state (hybrid approach)
+            if trigger_config:
+                excel_file_path = trigger_config.get("excel_file_path", self.state.excel_file_path)
+                output_dir = trigger_config.get("output_dir", str(OUTPUT_DIR))
+            else:
+                excel_file_path = self.state.excel_file_path
+                output_dir = str(OUTPUT_DIR)
+
             # Kick off Excel Processor Crew
             result = (
                 ExcelProcessorCrew()
                 .crew()
                 .kickoff(inputs={
-                    "excel_file_path": self.state.excel_file_path,
-                    "output_dir": str(OUTPUT_DIR),
+                    "excel_file_path": excel_file_path,
+                    "output_dir": output_dir,
                     "raw_data": {},  # Will be populated by parse task
                 })
             )
@@ -287,16 +305,27 @@ class RevManFlow(Flow[RevManFlowState]):
                 print(f"[OK] State updated for platform visibility")
             # === END NEW ===
 
+            # === NEW: Return data for next step (automatic data passing) ===
+            return {
+                "price_changes_categorized": self._price_changes_categorized,
+                "effective_date_display": self._effective_date.strftime('%B %d, %Y') if self._effective_date else None,
+                "effective_date_iso": self._effective_date.isoformat() if self._effective_date else None,
+            }
+            # === END NEW ===
+
         except Exception as e:
             error_msg = f"Error in Excel processing: {str(e)}"
             print(f"[ERROR] {error_msg}")
             raise
 
     @listen(excel_processing_step)
-    def email_generation_step(self):
+    def email_generation_step(self, excel_results=None):
         """
         Run Email Builder Crew (Crew 2)
         - Generate highlights content in plain text template format
+
+        Args:
+            excel_results: Results from excel_processing_step (automatic from @listen)
         """
         step_start = time.time()
 
@@ -305,13 +334,21 @@ class RevManFlow(Flow[RevManFlowState]):
         print("-" * 60)
 
         try:
+            # Use excel_results if available, fallback to instance variables (hybrid approach)
+            if excel_results:
+                price_changes = excel_results.get("price_changes_categorized", self._price_changes_categorized)
+                effective_date = excel_results.get("effective_date_display", self._effective_date.strftime('%B %d, %Y'))
+            else:
+                price_changes = self._price_changes_categorized
+                effective_date = self._effective_date.strftime('%B %d, %Y')
+
             # Kick off Email Builder Crew
             result = (
                 EmailBuilderCrew()
                 .crew()
                 .kickoff(inputs={
-                    "price_changes_categorized": self._price_changes_categorized,
-                    "effective_date": self._effective_date.strftime('%B %d, %Y'),
+                    "price_changes_categorized": price_changes,
+                    "effective_date": effective_date,
                 })
             )
 
@@ -336,18 +373,28 @@ class RevManFlow(Flow[RevManFlowState]):
             print(f"[OK] Email state updated for platform visibility")
             # === END NEW ===
 
+            # === NEW: Return data for next step (automatic data passing) ===
+            return {
+                "email_content": self._email_content,
+                "email_subject": self._email_subject,
+            }
+            # === END NEW ===
+
         except Exception as e:
             error_msg = f"Error in email generation: {str(e)}"
             print(f"[ERROR] {error_msg}")
             raise
 
     @listen(email_generation_step)
-    def validation_step(self):
+    def validation_step(self, email_output=None):
         """
         Validate email output
         - Check content completeness
         - Verify template format structure
         - Check for required sections
+
+        Args:
+            email_output: Email data from email_generation_step (automatic from @listen)
         """
         step_start = time.time()
 
@@ -356,8 +403,13 @@ class RevManFlow(Flow[RevManFlowState]):
         print("-" * 60)
 
         try:
+            # Use email_output if available, fallback to instance variable (hybrid approach)
+            if email_output:
+                content = email_output.get("email_content", self._email_content)
+            else:
+                content = self._email_content
+
             # Basic validation for plain text template format
-            content = self._email_content
 
             validation_data = {
                 "validation_status": "PASS",
@@ -426,18 +478,25 @@ class RevManFlow(Flow[RevManFlowState]):
             self._step_times['validation'] = step_duration
             print(f"[TIMING] Validation: {self._format_duration(step_duration)}")
 
+            # === NEW: Return validation results for next step (automatic data passing) ===
+            return validation_data
+            # === END NEW ===
+
         except Exception as e:
             error_msg = f"Error in validation: {str(e)}"
             print(f"[ERROR] {error_msg}")
             raise
 
     @listen(validation_step)
-    def save_email_output(self):
+    def save_email_output(self, validation_results=None):
         """
         Save generated email to output directory
         - Save plain text email in template format
         - Save metadata
         - Save validation report
+
+        Args:
+            validation_results: Validation data from validation_step (automatic from @listen)
         """
         step_start = time.time()
 
