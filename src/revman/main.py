@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from crewai.flow import Flow, listen, start
 from crewai import Agent
 
@@ -31,41 +31,43 @@ TEMPLATE_DIR = Path(os.getenv('REVMAN_TEMPLATE_DIR', DATA_DIR / "templates"))
 
 
 class RevManFlowState(BaseModel):
-    """State model for RevMan Price Change Flow
+    """State model for RevMan Price Change Flow - Deployment Input Only
 
-    Stores both user inputs and flow outputs for platform visibility.
-    All output fields are Optional and populated during flow execution.
+    Contains only the required user input for platform deployment.
+    All outputs are returned via structured FlowOutput model from kickoff.
     """
-
-    # ===== USER INPUT (Required) =====
     excel_file_path: str = "TBS Price Change Summary Report - October 13th'25.xlsx"
 
-    # ===== EXCEL PROCESSING OUTPUTS (Step 1) =====
-    excel_output_path: Optional[str] = None  # Path to Excel with formulas added
-    effective_date: Optional[str] = None  # ISO format: "2025-10-13"
-    effective_date_display: Optional[str] = None  # Display format: "October 13, 2025"
-    price_changes_categorized: Optional[Dict[str, Any]] = None  # Categorized price data
-    validation_info: Optional[Dict[str, Any]] = None  # Initial data validation from Excel crew
 
-    # ===== EMAIL GENERATION OUTPUTS (Step 2) =====
-    email_content: Optional[str] = None  # Generated email body (plain text)
-    email_subject: Optional[str] = None  # Generated email subject line
+class FlowOutput(BaseModel):
+    """Structured output from RevMan Flow for platform visibility
 
-    # ===== VALIDATION OUTPUTS (Step 3) =====
-    validation_status: Optional[str] = None  # "PASS", "FAIL", or "PASS WITH WARNINGS"
-    validation_score: Optional[int] = None  # 0-100 quality score
-    validation_issues: Optional[List[str]] = None  # Critical issues found
-    validation_warnings: Optional[List[str]] = None  # Non-critical warnings
+    Contains all intermediate and final results from the flow execution.
+    """
+    # Excel Processing Results
+    excel_output_path: str = Field(description="Path to Excel file with formulas added")
+    effective_date: str = Field(description="Price change effective date (ISO format)")
+    effective_date_display: str = Field(description="Effective date in display format")
+    price_changes_categorized: Dict[str, Any] = Field(description="Categorized price change data")
 
-    # ===== FINAL ARTIFACTS (Step 4) =====
-    output_email_path: Optional[str] = None  # Path to saved email .txt file
-    output_metadata_path: Optional[str] = None  # Path to email metadata JSON
-    output_validation_path: Optional[str] = None  # Path to validation report JSON
+    # Email Generation Results
+    email_content: str = Field(description="Generated email body (plain text)")
+    email_subject: str = Field(description="Generated email subject line")
 
-    # ===== FLOW METADATA =====
-    trigger_date: Optional[str] = None  # ISO format timestamp of flow start
-    email_recipients: Optional[List[str]] = None  # Email recipient list
-    flow_status: Optional[str] = "INITIALIZED"  # INITIALIZED -> RUNNING -> COMPLETED/FAILED
+    # Validation Results
+    validation_status: str = Field(description="Validation status: PASS/FAIL/PASS WITH WARNINGS")
+    validation_score: int = Field(description="Validation quality score (0-100)")
+    validation_issues: List[str] = Field(description="Critical validation issues")
+    validation_warnings: List[str] = Field(description="Non-critical validation warnings")
+
+    # Output Artifacts
+    output_email_path: str = Field(description="Path to saved email .txt file")
+    output_metadata_path: str = Field(description="Path to email metadata JSON")
+    output_validation_path: str = Field(description="Path to validation report JSON")
+
+    # Flow Metadata
+    trigger_date: str = Field(description="Flow execution start timestamp (ISO format)")
+    email_recipients: List[str] = Field(description="Email recipient list")
 
 
 class RevManFlow(Flow[RevManFlowState]):
@@ -144,12 +146,6 @@ class RevManFlow(Flow[RevManFlowState]):
             "REVMAN_EMAIL_RECIPIENTS",
             "aaditya.singhal@anheuser-busch.com"
         ).split(",")  # Support comma-separated list
-
-        # === NEW: Update state metadata for platform visibility ===
-        self.state.trigger_date = self._trigger_date.isoformat()
-        self.state.email_recipients = self._email_recipients
-        self.state.flow_status = "RUNNING"
-        # === END NEW ===
 
         print("\n" + "=" * 60)
         print("[START] RevMan Price Change Flow Started")
@@ -289,22 +285,6 @@ class RevManFlow(Flow[RevManFlowState]):
                 self._effective_date = self._trigger_date
                 print(f"[WARNING] Using trigger date as fallback for effective date")
 
-            # === NEW: Update state for platform visibility ===
-            # Populate state fields with extracted data (additive - no behavior change)
-            if self._effective_date:
-                self.state.effective_date = self._effective_date.isoformat()
-                self.state.effective_date_display = self._effective_date.strftime('%B %d, %Y')
-
-            self.state.price_changes_categorized = self._price_changes_categorized
-            self.state.validation_info = getattr(self, '_validation_info', None)
-
-            # Find Excel output path from OUTPUT_DIR
-            excel_output_file = OUTPUT_DIR / f"{Path(self.state.excel_file_path).stem}_formula.xlsx"
-            if excel_output_file.exists():
-                self.state.excel_output_path = str(excel_output_file)
-                print(f"[OK] State updated for platform visibility")
-            # === END NEW ===
-
             # === NEW: Return data for next step (automatic data passing) ===
             return {
                 "price_changes_categorized": self._price_changes_categorized,
@@ -366,12 +346,6 @@ class RevManFlow(Flow[RevManFlowState]):
 
             print(f"[OK] Email content generated in template format")
             print(f"  Subject: {self._email_subject}")
-
-            # === NEW: Update state for platform visibility ===
-            self.state.email_content = self._email_content
-            self.state.email_subject = self._email_subject
-            print(f"[OK] Email state updated for platform visibility")
-            # === END NEW ===
 
             # === NEW: Return data for next step (automatic data passing) ===
             return {
@@ -451,13 +425,6 @@ class RevManFlow(Flow[RevManFlowState]):
             self._validation_report = validation_data
             status = validation_data.get("validation_status", "FAIL")
             self._validation_passed = status in ["PASS", "PASS WITH WARNINGS"]
-
-            # === NEW: Update state for platform visibility ===
-            self.state.validation_status = validation_data.get("validation_status", "FAIL")
-            self.state.validation_score = validation_data.get("quality_score", 0)
-            self.state.validation_issues = validation_data.get("critical_issues", [])
-            self.state.validation_warnings = validation_data.get("warnings", [])
-            # === END NEW ===
 
             print(f"[OK] Validation {status}")
             print(f"  Quality Score: {validation_data.get('quality_score', 0)}/100")
@@ -539,14 +506,6 @@ class RevManFlow(Flow[RevManFlowState]):
                 json.dump(self._validation_report, f, indent=2)
             print(f"[OK] Saved validation report: {report_path}")
 
-            # === NEW: Update state with artifact paths for platform visibility ===
-            self.state.output_email_path = str(txt_path)
-            self.state.output_metadata_path = str(metadata_path)
-            self.state.output_validation_path = str(report_path)
-            self.state.flow_status = "COMPLETED"
-            print(f"[OK] Artifact paths updated in state for platform visibility")
-            # === END NEW ===
-
             step_duration = time.time() - step_start
             self._step_times['save_output'] = step_duration
             print(f"[TIMING] Save output: {self._format_duration(step_duration)}")
@@ -560,6 +519,37 @@ class RevManFlow(Flow[RevManFlowState]):
             print(f"Output: {txt_path}")
             print(f"Subject: {self._email_subject}")
             print("=" * 60 + "\n")
+
+            # Construct Excel output path (from Excel processing step)
+            excel_output_path = OUTPUT_DIR / f"{Path(self.state.excel_file_path).stem}_formula.xlsx"
+
+            # Return structured output for platform visibility
+            return FlowOutput(
+                # Excel Processing Results
+                excel_output_path=str(excel_output_path),
+                effective_date=self._effective_date.isoformat(),
+                effective_date_display=self._effective_date.strftime('%B %d, %Y'),
+                price_changes_categorized=self._price_changes_categorized,
+
+                # Email Generation Results
+                email_content=self._email_content,
+                email_subject=self._email_subject,
+
+                # Validation Results
+                validation_status=self._validation_report.get("validation_status", "FAIL"),
+                validation_score=self._validation_report.get("quality_score", 0),
+                validation_issues=self._validation_report.get("critical_issues", []),
+                validation_warnings=self._validation_report.get("warnings", []),
+
+                # Output Artifacts
+                output_email_path=str(txt_path),
+                output_metadata_path=str(metadata_path),
+                output_validation_path=str(report_path),
+
+                # Flow Metadata
+                trigger_date=self._trigger_date.isoformat(),
+                email_recipients=self._email_recipients,
+            )
 
         except Exception as e:
             error_msg = f"Error saving output: {str(e)}"

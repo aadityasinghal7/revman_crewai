@@ -9,7 +9,14 @@
       "WebFetch(domain:help.crewai.com)",
       "Bash(dir:*)",
       "Bash(nul)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(crewai --help:*)",
+      "Bash(crewai deploy --help:*)",
+      "Bash(crewai triggers --help:*)",
+      "WebFetch(domain:medium.com)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
