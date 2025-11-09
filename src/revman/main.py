@@ -330,6 +330,12 @@ class RevManFlow(Flow[RevManFlowState]):
             print(f"[OK] Email content generated in template format")
             print(f"  Subject: {self._email_subject}")
 
+            # === NEW: Update state for platform visibility ===
+            self.state.email_content = self._email_content
+            self.state.email_subject = self._email_subject
+            print(f"[OK] Email state updated for platform visibility")
+            # === END NEW ===
+
         except Exception as e:
             error_msg = f"Error in email generation: {str(e)}"
             print(f"[ERROR] {error_msg}")
