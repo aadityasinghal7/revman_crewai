@@ -34,7 +34,7 @@ class RevManFlowState(BaseModel):
     """State model for RevMan Price Change Flow - Only user-provided inputs"""
 
     # User input - the only field required at kickoff
-    excel_file_path: str = str(INPUT_DIR / "TBS Price Change Summary Report - October 13th'25.xlsx")
+    excel_file_path: str = "TBS Price Change Summary Report - October 13th'25.xlsx"
 
 
 class RevManFlow(Flow[RevManFlowState]):
@@ -56,6 +56,7 @@ class RevManFlow(Flow[RevManFlowState]):
 
         # Internal state - auto-generated, not from kickoff
         self._trigger_date: datetime = None  # Will be set to datetime.now() in trigger_flow
+        self._effective_date: datetime = None  # Will be extracted from filename by Excel processor crew
         self._email_recipients: List[str] = None  # Will load from env in trigger_flow
         self._email_content: str = ""
         self._email_subject: str = ""
@@ -210,6 +211,29 @@ class RevManFlow(Flow[RevManFlowState]):
                 print(f"[WARNING] Could not parse result as JSON, storing raw output")
                 self._price_changes_categorized = {"raw_output": result_str}
 
+            # Extract effective date from the extract_effective_date task output
+            # The crew result has a tasks_output attribute containing all task outputs
+            if hasattr(result, 'tasks_output') and result.tasks_output:
+                for task_output in result.tasks_output:
+                    # Find the extract_effective_date task output
+                    task_name = getattr(task_output, 'name', '')
+                    if 'extract_effective_date' in str(task_name).lower():
+                        date_result_str = task_output.raw if hasattr(task_output, 'raw') else str(task_output)
+                        try:
+                            date_data = json.loads(date_result_str)
+                            if date_data.get('success') and date_data.get('effective_date_iso'):
+                                # Parse the ISO date string to datetime
+                                self._effective_date = datetime.fromisoformat(date_data['effective_date_iso'])
+                                print(f"[OK] Effective date extracted: {date_data.get('effective_date_display')}")
+                                break
+                        except (json.JSONDecodeError, ValueError, KeyError) as e:
+                            print(f"[WARNING] Could not parse effective date from task output: {e}")
+
+            # Fallback: if effective date was not extracted, use trigger date
+            if self._effective_date is None:
+                self._effective_date = self._trigger_date
+                print(f"[WARNING] Using trigger date as fallback for effective date")
+
         except Exception as e:
             error_msg = f"Error in Excel processing: {str(e)}"
             print(f"[ERROR] {error_msg}")
@@ -234,6 +258,7 @@ class RevManFlow(Flow[RevManFlowState]):
                 .crew()
                 .kickoff(inputs={
                     "price_changes_categorized": self._price_changes_categorized,
+                    "effective_date": self._effective_date.strftime('%B %d, %Y'),
                 })
             )
 
@@ -247,7 +272,7 @@ class RevManFlow(Flow[RevManFlowState]):
 
             # The result should be plain text content in template format
             self._email_content = result_str
-            self._email_subject = f"TBS Price Change Summary - {self._trigger_date.strftime('%B %d, %Y')}"
+            self._email_subject = f"TBS Price Change Summary – Effective {self._effective_date.strftime('%B %d, %Y')}"
 
             print(f"[OK] Email content generated in template format")
             print(f"  Subject: {self._email_subject}")
@@ -287,23 +312,21 @@ class RevManFlow(Flow[RevManFlowState]):
                 validation_data["critical_issues"].append("Missing required title: 'Highlights (Price Before Tax and Deposit)'")
 
             # Check for at least one brewer section
-            brewers = ["LABATT", "MOLSON", "SLEEMAN"]
+            brewers = ["LABATT", "MOLSON", "SLEEMAN", "Other"]
             has_brewer = any(brewer in content for brewer in brewers)
             if not has_brewer:
-                validation_data["critical_issues"].append("No brewer sections found (LABATT, MOLSON, SLEEMAN)")
+                validation_data["critical_issues"].append("No brewer sections found (LABATT, MOLSON, SLEEMAN, Other)")
 
-            # Check for at least one change type section
-            sections = ["Begin LTO", "End LTO"]
+            # Check for at least one change type section (standard categories)
+            sections = ["Begin LTO", "End LTO", "Permanent Changes"]
             has_section = any(section in content for section in sections)
             if not has_section:
-                validation_data["warnings"].append("No change type sections found (Begin LTO, End LTO)")
+                validation_data["warnings"].append("No change type sections found (Begin LTO, End LTO, Permanent Changes)")
 
-            # Check for deprecated sections that should NOT exist
-            if "Permanent Changes" in content or "End LTO & Perm Change" in content:
-                validation_data["warnings"].append(
-                    "Found deprecated section: 'Permanent Changes' or 'End LTO & Perm Change'. "
-                    "Only 'Begin LTO' and 'End LTO' sections should exist per plan.md."
-                )
+            # Optional sections that may appear (don't flag if missing)
+            # - "End LTO & Permanent Change" (only if historical data shows price not returning to pre-LTO)
+            # - "LICENSEE CHANGES" (only if licensee changes exist)
+            # - "NEW SKUs" (only if new SKUs exist)
 
             # Update validation status based on issues
             if validation_data["critical_issues"]:
@@ -375,6 +398,7 @@ class RevManFlow(Flow[RevManFlowState]):
                 "subject": self._email_subject,
                 "generated_at": datetime.now().isoformat(),
                 "trigger_date": self._trigger_date.isoformat(),
+                "effective_date": self._effective_date.isoformat(),
                 "input_file": self.state.excel_file_path,
                 "validation_passed": self._validation_passed,
                 "recipients": self._email_recipients,

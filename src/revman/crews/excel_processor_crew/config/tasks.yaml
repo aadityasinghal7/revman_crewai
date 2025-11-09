@@ -32,6 +32,43 @@ parse_excel_file:
 
   agent: excel_parser_agent
 
+extract_effective_date:
+  description: |
+    Extract the effective date from the input Excel filename to determine when the price changes take effect.
+
+    INSTRUCTIONS:
+    - Input: {excel_file_path} (the path to the Excel file)
+    - Use the DateExtractorTool to parse the filename and extract the date
+    - Expected filename pattern: "TBS Price Change Summary Report - October 13th'25.xlsx"
+    - The tool will extract the date portion (e.g., "October 13th'25") and parse it to:
+      * ISO format: "2025-10-13" (for internal use)
+      * Display format: "October 13, 2025" (for email subject and body)
+    - If date extraction fails, the tool will fallback to current date
+
+    This date represents when the price changes become effective (NOT when the flow runs).
+    It will be used in the email subject line and body.
+
+  expected_output: |
+    A JSON response containing:
+    - success: true/false
+    - source: "filename" (or "fallback"/"error")
+    - effective_date_iso: "2025-10-13" (ISO format YYYY-MM-DD)
+    - effective_date_display: "October 13, 2025" (human-readable format)
+    - message: Success or error message
+
+    Example:
+    {{
+      "success": true,
+      "source": "filename",
+      "filename": "TBS Price Change Summary Report - October 13th'25_formula.xlsx",
+      "effective_date_iso": "2025-10-13",
+      "effective_date_display": "October 13, 2025",
+      "raw_date_string": "October 13th'25",
+      "message": "Successfully extracted date: October 13, 2025"
+    }}
+
+  agent: excel_parser_agent
+
 generate_formula_excel:
   description: |
     Generate a copy of the input Excel file with formulas added to calculate formatted price change text.
@@ -74,24 +111,37 @@ generate_formula_excel:
 
 analyze_price_changes:
   description: |
-    Analyze and categorize price change data for highlights email based on the actual template structure.
+    Analyze and categorize price change data for highlights email using the 6-category system.
+
+    BREWER HIERARCHY AND BRAND MAPPING:
+    Map individual brands to their parent brewers using this hierarchy:
+    - LABATT: Includes Budweiser, Bud Light, Stella Artois, Corona, Modelo, Becks, Hoegaarden, Michelob, etc.
+    - MOLSON: Includes Coors, Molson Canadian, Miller, Heineken, etc.
+    - SLEEMAN: Includes Sleeman products, Sapporo, etc.
+    - Other: Includes Laker, Peroni, James Ready, Moosehead, Guinness, and any brands not in above categories
 
     PRIMARY CATEGORIZATION:
-    1. Group all products by Brewer (e.g., LABATT, MOLSON, SLEEMAN)
-    2. Within each brewer, categorize changes using PRECISE mathematical rules:
-       - "Begin LTO" - Price DECREASES that are multiples of $0.25 AND reduce price by >5%
-       - "End LTO" - Price INCREASES that are multiples of $0.25 AND increase price by >5%
-       NOTE: These are the ONLY two categories. No other categories exist.
+    1. Group retail products by Parent Brewer (LABATT, MOLSON, SLEEMAN, Other)
+       - Use the brand mapping above to assign each product to the correct parent brewer
+       - If a product's brewer is not explicitly listed, assign to "Other"
+    2. Within each brewer, categorize changes using ±4% threshold rules:
+       - "Permanent Change" - 96% ≤ new price ≤ 104% of old price (Type of Sale = TBS – Retail Price)
+       - "Begin LTO" - new price < 96% of old price (>4% decrease, Type of Sale = TBS – Retail Price)
+       - "End LTO" - new price > 104% of old price (>4% increase, Type of Sale = TBS – Retail Price)
+       - "End LTO & Permanent Change" - Same as End LTO, but price does not return to pre-LTO level (requires historical check)
+       - "New SKU" - Clearly marked in the file
+       - "Licensee Change" - Type of Sale = TBS - Licensee
 
     FOR EACH PRODUCT:
-    - Calculate: price_change_amount (+ for increase, - for decrease)
-    - Calculate: price_change_percent = abs((change_amount / old_price) * 100)
-    - Check: is_quarter_multiple = (abs(change_amount) % 0.25) < 0.01
+    - Calculate: price_ratio = new_price / old_price
+    - Check: Type of Sale field
     - Determine final price (New Price)
     - Apply categorization rules:
-      * If decrease AND is_quarter_multiple AND price_change_percent > 5: "Begin LTO"
-      * If increase AND is_quarter_multiple AND price_change_percent > 5: "End LTO"
-      * Otherwise: Do NOT include (doesn't meet criteria)
+      * If Type of Sale = "TBS - Licensee": "Licensee Change"
+      * If marked as New SKU: "New SKU"
+      * If price_ratio < 0.96: "Begin LTO"
+      * If price_ratio > 1.04: "End LTO" (or "End LTO & Permanent Change" if historical data shows not returning to pre-LTO)
+      * If 0.96 ≤ price_ratio ≤ 1.04: "Permanent Change"
     - Format as: "Product Name PackSize +/-$X.XX to $YY.YY" (NO context or commentary)
 
   expected_output: |
@@ -106,23 +156,52 @@ analyze_price_changes:
         "End LTO": [
           "Bud Light Lemon Lime 12C +$2 to $29.99",
           ...
+        ],
+        "End LTO & Permanent Change": [
+          "Stella Artois 24B +$3.50 to $52.99",
+          ...
+        ],
+        "Permanent Changes": [
+          "Bud Light 28B -$0.50 to $43.49",
+          "Corona Extra 12C +$0.25 to $24.99",
+          ...
         ]
       }},
       "MOLSON": {{
         "Begin LTO": [...],
-        "End LTO": [...]
+        "End LTO": [...],
+        "Permanent Changes": [...]
       }},
       "SLEEMAN": {{
         "Begin LTO": [...],
-        "End LTO": [...]
-      }}
+        "End LTO": [...],
+        "Permanent Changes": [...]
+      }},
+      "Other": {{
+        "Begin LTO": [
+          "Laker 24C -$2.00 to $28.99",
+          ...
+        ],
+        "End LTO": [...],
+        "Permanent Changes": [
+          "Guinness 12B +$0.50 to $32.99",
+          ...
+        ]
+      }},
+      "LICENSEE CHANGES": [
+        "Craft Beer Brand 12C +$1.00 to $28.99",
+        ...
+      ],
+      "NEW SKUs": [
+        "New Product Launch 24C $49.99",
+        ...
+      ]
     }}
 
     Each entry should be:
     - Formatted as: Product PackSize +/-$Amount to $NewPrice
     - NO business context or explanatory notes
-    - Only products meeting the 5% + $0.25 multiple criteria
-    - Categorized using precise mathematical rules above
+    - Categorized using ±4% threshold rules above
     - Ready for direct insertion into email template
 
   agent: data_analyst_agent
@@ -153,16 +232,22 @@ validate_data_quality:
             "Budweiser 30C -$5.50 to $45.99",
             ...
           ],
-          "End LTO": [...]
+          "End LTO": [...],
+          "End LTO & Permanent Change": [...],
+          "Permanent Changes": [...]
         }},
         "MOLSON": {{
           "Begin LTO": [...],
-          "End LTO": [...]
+          "End LTO": [...],
+          "Permanent Changes": [...]
         }},
         "SLEEMAN": {{
           "Begin LTO": [...],
-          "End LTO": [...]
-        }}
+          "End LTO": [...],
+          "Permanent Changes": [...]
+        }},
+        "LICENSEE CHANGES": [...],
+        "NEW SKUs": [...]
       }}
     }}
 

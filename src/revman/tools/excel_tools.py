@@ -171,33 +171,35 @@ class PriceCalculatorTool(BaseTool):
             else:
                 change_percent = 0
 
-            # Calculate absolute percentage change
-            abs_change_percent = abs(change_percent)
+            # Calculate price ratio for ±4% threshold categorization
+            price_ratio = new_price / old_price if old_price != 0 else 1.0
 
-            # Check if multiple of $0.25 (with float comparison tolerance)
-            is_quarter_multiple = (abs(change_amount) % 0.25) < 0.01
-
-            # Determine direction and type based on plan.md rules:
-            # - Begin LTO: decrease AND is_quarter_multiple AND >5%
-            # - End LTO: increase AND is_quarter_multiple AND >5%
-            if change_amount < 0:
+            # Determine direction and type based on plan.md ±4% threshold rules:
+            # - Permanent Change: 96% ≤ new price ≤ 104% of old price
+            # - Begin LTO: new price < 96% of old price (>4% decrease)
+            # - End LTO: new price > 104% of old price (>4% increase)
+            if price_ratio < 0.96:
                 direction = "decrease"
-                if is_quarter_multiple and abs_change_percent > 5:
-                    change_type = "Begin LTO"
-                else:
-                    change_type = "Not Categorized"  # Doesn't meet LTO criteria
-            elif change_amount > 0:
+                change_type = "Begin LTO"
+                is_significant = True
+            elif price_ratio > 1.04:
                 direction = "increase"
-                if is_quarter_multiple and abs_change_percent > 5:
-                    change_type = "End LTO"
-                else:
-                    change_type = "Not Categorized"  # Doesn't meet LTO criteria
+                change_type = "End LTO"
+                is_significant = True
+                # Note: "End LTO & Permanent Change" requires historical data check (future enhancement)
+            elif 0.96 <= price_ratio <= 1.04:
+                direction = "decrease" if change_amount < 0 else "increase"
+                change_type = "Permanent Change"
+                is_significant = True
             else:
                 direction = "no change"
                 change_type = "No Change"
+                is_significant = False
 
-            # Determine if it's significant (meets LTO criteria)
-            is_significant = is_quarter_multiple and abs_change_percent > 5
+            # Additional categorization based on Type of Sale field:
+            # - If type_of_sale == "TBS - Licensee": change_type = "Licensee Change"
+            # - If marked as new SKU in file: change_type = "New SKU"
+            # (These would need to be passed as additional parameters to this function)
 
             result = {
                 "success": True,
@@ -326,4 +328,93 @@ class FormulaExcelGeneratorTool(BaseTool):
             return json.dumps({
                 "success": False,
                 "error": f"Error generating formula Excel: {str(e)}"
+            }, indent=2)
+
+
+class DateExtractorInput(BaseModel):
+    """Input schema for DateExtractorTool"""
+    file_path: str = Field(..., description="Path to the Excel file (date will be extracted from filename)")
+
+
+class DateExtractorTool(BaseTool):
+    name: str = "Date Extractor from Filename"
+    description: str = (
+        "Extracts the effective date from TBS Price Change Summary Report filename. "
+        "Expected filename format: 'TBS Price Change Summary Report - October 13th'25.xlsx' "
+        "Returns the parsed date in both ISO format (YYYY-MM-DD) and display format (Month DD, YYYY)."
+    )
+    args_schema: type[BaseModel] = DateExtractorInput
+
+    def _run(self, file_path: str) -> str:
+        """
+        Extract effective date from filename
+
+        Args:
+            file_path: Path to the Excel file (date extracted from filename)
+
+        Returns:
+            JSON string with date information
+        """
+        try:
+            import json
+            from datetime import datetime
+
+            # Get the filename
+            file_path_obj = Path(file_path)
+            filename = file_path_obj.name
+
+            # Pattern to match: Month DDth'YY or Month DD'YY
+            # Examples: "October 13th'25", "November 7th'25", "January 1st'26"
+            pattern = r'([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?[\'\']?(\d{2})'
+
+            match = re.search(pattern, filename)
+
+            if match:
+                month_str = match.group(1)  # e.g., "October"
+                day_str = match.group(2)     # e.g., "13"
+                year_str = match.group(3)    # e.g., "25"
+
+                # Parse the date
+                date_str = f"{month_str} {day_str}, 20{year_str}"
+                parsed_date = datetime.strptime(date_str, "%B %d, %Y")
+
+                result = {
+                    "success": True,
+                    "source": "filename",
+                    "filename": filename,
+                    "effective_date_iso": parsed_date.strftime("%Y-%m-%d"),
+                    "effective_date_display": parsed_date.strftime("%B %d, %Y"),
+                    "raw_date_string": f"{month_str} {day_str}'{year_str}",
+                    "message": f"Successfully extracted date: {parsed_date.strftime('%B %d, %Y')}"
+                }
+
+                return json.dumps(result, indent=2)
+            else:
+                # Fallback: use current date if pattern doesn't match
+                current_date = datetime.now()
+                result = {
+                    "success": False,
+                    "source": "fallback",
+                    "filename": filename,
+                    "effective_date_iso": current_date.strftime("%Y-%m-%d"),
+                    "effective_date_display": current_date.strftime("%B %d, %Y"),
+                    "error": "Could not extract date from filename, using current date as fallback",
+                    "message": f"Using fallback date: {current_date.strftime('%B %d, %Y')}"
+                }
+
+                return json.dumps(result, indent=2)
+
+        except Exception as e:
+            import json
+            from datetime import datetime
+
+            # Return error with current date fallback
+            current_date = datetime.now()
+            return json.dumps({
+                "success": False,
+                "source": "error",
+                "effective_date_iso": current_date.strftime("%Y-%m-%d"),
+                "effective_date_display": current_date.strftime("%B %d, %Y"),
+                "error": f"Error extracting date: {str(e)}",
+                "message": f"Using fallback date: {current_date.strftime('%B %d, %Y')}"
             }, indent=2)

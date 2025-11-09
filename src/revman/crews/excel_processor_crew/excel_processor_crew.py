@@ -1,7 +1,7 @@
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
-from revman.tools import ExcelReaderTool, DataCleanerTool, PriceCalculatorTool, FormulaExcelGeneratorTool
+from revman.tools import ExcelReaderTool, DataCleanerTool, PriceCalculatorTool, FormulaExcelGeneratorTool, DateExtractorTool
 
 
 @CrewBase
@@ -16,7 +16,7 @@ class ExcelProcessorCrew:
         return Agent(
             config=self.agents_config["excel_parser_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            tools=[ExcelReaderTool(), DataCleanerTool(), FormulaExcelGeneratorTool()],
+            tools=[ExcelReaderTool(), DataCleanerTool(), FormulaExcelGeneratorTool(), DateExtractorTool()],
             verbose=False,  # Disabled for performance - timing tracked in main.py
         )
 
@@ -41,6 +41,12 @@ class ExcelProcessorCrew:
     def parse_excel_file(self) -> Task:
         return Task(
             config=self.tasks_config["parse_excel_file"],
+        )
+
+    @task
+    def extract_effective_date(self) -> Task:
+        return Task(
+            config=self.tasks_config["extract_effective_date"],
         )
 
     @task

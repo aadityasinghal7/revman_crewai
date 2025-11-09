@@ -1,0 +1,11 @@
+{
+  "subject": "TBS Price Change Summary \u2013 Effective October 13, 2025",
+  "generated_at": "2025-11-09T14:31:01.191900",
+  "trigger_date": "2025-11-09T14:24:08.012293",
+  "effective_date": "2025-10-13T00:00:00",
+  "input_file": "data\\input\\TBS Price Change Summary Report - October 13th'25.xlsx",
+  "validation_passed": true,
+  "recipients": [
+    "aaditya.singhal@anheuser-busch.com"
+  ]
+}

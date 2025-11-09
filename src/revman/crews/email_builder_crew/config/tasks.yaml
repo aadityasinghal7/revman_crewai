@@ -1,18 +1,44 @@
 write_highlights_content:
   description: |
-    Transform the categorized price change data from {price_changes_categorized} into the standard "Highlights" email format.
+    Transform the categorized price change data into a complete email with subject line, opening text, and highlights.
 
     INPUT DATA:
-    You will receive a dictionary with brewers as keys and their price changes categorized by type.
+    - price_changes_categorized: A dictionary with brewers as keys and their price changes categorized by type
+    - effective_date: The effective date for the price changes (e.g., "October 13, 2025")
+
     Use ALL the data provided - do NOT use placeholder values.
 
     REQUIRED STRUCTURE:
-    1. Title: "Highlights (Price Before Tax and Deposit)"
-    2. For each Brewer (LABATT, MOLSON, SLEEMAN, etc.):
+    1. Subject Line: "TBS Price Change Summary – Effective {effective_date}"
+       - Use the provided effective_date (extracted from the filename)
+       - Consistent format each week
+       - Use em dash (–) not hyphen (-)
+
+    2. Opening Text:
+       - Brief paragraph providing context about the price changes
+       - Reference the effective date
+       - Keep it consistent each week
+
+    3. Highlights Section:
+       - Title: "Highlights (Price Before Tax and Deposit)"
+       - Pack size notation note: "C = 355mL can, TC = 473mL tall can, B = bottle"
+       - For each Brewer (LABATT, MOLSON, SLEEMAN, Other) in that order:
        - Brewer name as header
-       - "Begin LTO" section with price decreases (>5%, $0.25 multiples)
-       - "End LTO" section with price increases (>5%, $0.25 multiples)
+       - "Begin LTO" section (if applicable) - new price < 96% of old price
+       - "End LTO" section (if applicable) - new price > 104% of old price
+       - "End LTO & Permanent Change" section (if applicable)
+       - "Permanent Changes" section (if applicable) - 96% ≤ new price ≤ 104% of old price
        - Empty line between brewers
+
+    Brewer Hierarchy (for reference):
+       - LABATT: Includes Budweiser, Bud Light, Stella Artois, Corona, Modelo, Becks, Hoegaarden, Michelob
+       - MOLSON: Includes Coors, Molson Canadian, Miller, Heineken
+       - SLEEMAN: Includes Sleeman products, Sapporo
+       - Other: Includes Laker, Peroni, James Ready, Moosehead, Guinness, and other brands
+
+    3. After all brewers:
+       - "LICENSEE CHANGES" section (if applicable) - Type of Sale = TBS - Licensee
+       - "NEW SKUs" section (if applicable) - newly added products
 
     FORMAT EACH LINE:
     Product PackSize +/-$Amount to $FinalPrice
@@ -28,9 +54,19 @@ write_highlights_content:
     - Present data cleanly without additional interpretation
 
   expected_output: |
-    Structured plain text content in the exact template format:
+    Complete email in plain text format:
+
+    Subject: TBS Price Change Summary – Effective {effective_date}
+
+    ---
+
+    Dear Team,
+
+    Please find below the TBS price changes effective {effective_date}. This summary includes all price adjustments across our portfolio, organized by brewer and change type.
 
     Highlights (Price Before Tax and Deposit)
+
+    Note: Pack size notation - C = 355mL can, TC = 473mL tall can, B = bottle
 
     LABATT
     Begin LTO
@@ -39,19 +75,56 @@ write_highlights_content:
     End LTO
     Product lines...
 
+    End LTO & Permanent Change
+    Product lines...
+
+    Permanent Changes
+    Product lines...
+
     MOLSON
     Begin LTO
     Product lines...
 
     End LTO
     Product lines...
-    ...
+
+    Permanent Changes
+    Product lines...
+
+    SLEEMAN
+    Begin LTO
+    Product lines...
+
+    Permanent Changes
+    Product lines...
+
+    Other
+    Begin LTO
+    Product lines...
+
+    Permanent Changes
+    Product lines...
+
+    LICENSEE CHANGES
+    Product lines...
+
+    NEW SKUs
+    Product lines...
+
+    ---
+
+    Best regards,
+    Revenue Management Team
 
     The output should be:
     - Plain text format (NOT HTML)
-    - Properly organized by brewer and change type
+    - Include subject line with em dash (–)
+    - Include opening text with effective date
+    - Include pack size notation
+    - Properly organized by brewer hierarchy
     - Each product line formatted as: Product PackSize +/-$Amount to $FinalPrice
     - NO business context or commentary
-    - Ready to paste directly into an email
+    - Include professional closing
+    - Ready to send directly
 
   agent: email_content_writer_agent
