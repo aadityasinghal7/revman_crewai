@@ -400,6 +400,13 @@ class RevManFlow(Flow[RevManFlowState]):
             status = validation_data.get("validation_status", "FAIL")
             self._validation_passed = status in ["PASS", "PASS WITH WARNINGS"]
 
+            # === NEW: Update state for platform visibility ===
+            self.state.validation_status = validation_data.get("validation_status", "FAIL")
+            self.state.validation_score = validation_data.get("quality_score", 0)
+            self.state.validation_issues = validation_data.get("critical_issues", [])
+            self.state.validation_warnings = validation_data.get("warnings", [])
+            # === END NEW ===
+
             print(f"[OK] Validation {status}")
             print(f"  Quality Score: {validation_data.get('quality_score', 0)}/100")
 
@@ -472,6 +479,14 @@ class RevManFlow(Flow[RevManFlowState]):
             with open(report_path, 'w', encoding='utf-8') as f:
                 json.dump(self._validation_report, f, indent=2)
             print(f"[OK] Saved validation report: {report_path}")
+
+            # === NEW: Update state with artifact paths for platform visibility ===
+            self.state.output_email_path = str(txt_path)
+            self.state.output_metadata_path = str(metadata_path)
+            self.state.output_validation_path = str(report_path)
+            self.state.flow_status = "COMPLETED"
+            print(f"[OK] Artifact paths updated in state for platform visibility")
+            # === END NEW ===
 
             step_duration = time.time() - step_start
             self._step_times['save_output'] = step_duration
