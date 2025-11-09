@@ -568,9 +568,9 @@ class RevManFlow(Flow[RevManFlowState]):
 
 
 def kickoff():
-    """Run the RevMan flow"""
+    """Run the RevMan flow and return the result for platform visibility"""
     flow = RevManFlow()
-    flow.kickoff()
+    return flow.kickoff()  # Return result for CrewAI platform tracing
 
 
 def plot():

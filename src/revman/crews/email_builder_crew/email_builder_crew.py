@@ -31,4 +31,5 @@ class EmailBuilderCrew:
             tasks=self.tasks,  # Automatically includes all @task decorated methods
             process=Process.sequential,
             verbose=False,
+            full_output=True,  # Enable full output capture for platform visibility
         )

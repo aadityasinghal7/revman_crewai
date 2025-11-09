@@ -75,4 +75,5 @@ class ExcelProcessorCrew:
             tasks=self.tasks,  # Automatically includes all @task decorated methods
             process=Process.sequential,
             verbose=False,  # Disabled for performance - timing tracked in main.py
+            full_output=True,  # Enable full output capture for platform visibility
         )
