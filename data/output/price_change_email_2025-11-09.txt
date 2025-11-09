@@ -1,5 +1,7 @@
 Subject: TBS Price Change Summary – Effective October 13, 2025
 
+---
+
 Dear Team,
 
 Please find below the TBS price changes effective October 13, 2025. This summary includes all price adjustments across our portfolio, organized by brewer and change type.
@@ -11,56 +13,56 @@ Note: Pack size notation - C = 355mL can, TC = 473mL tall can, B = bottle
 LABATT
 Begin LTO
 Budweiser 30C -$5.50 to $45.99
-Bud Light 24C -$4.00 to $38.49
-Corona 24B -$3.25 to $47.44
+Bud Light 24C -$4.00 to $38.95
+Stella Artois 12B -$3.00 to $24.95
+Corona Extra 24B -$4.50 to $49.95
 
 End LTO
-Stella Artois 12B +$2.50 to $28.99
-Michelob Ultra 15C +$1.75 to $24.49
+Budweiser 15C +$3.50 to $26.95
+Bud Light Lime 12C +$2.00 to $21.95
 
 End LTO & Permanent Change
-Modelo Especial 12B +$3.00 to $26.99
+Michelob Ultra 24C +$1.00 to $43.95
 
 Permanent Changes
-Budweiser 15C +$0.50 to $22.49
-Corona Extra 6B +$0.25 to $13.99
+Corona Premier 12B +$0.50 to $23.95
+Stella Artois 6B +$0.25 to $13.95
 
 MOLSON
 Begin LTO
-Coors Light 30C -$4.50 to $44.99
-Molson Canadian 24C -$3.00 to $36.99
+Coors Light 30C -$6.00 to $44.95
+Molson Canadian 24C -$4.00 to $37.95
 
 End LTO
-Heineken 12B +$2.00 to $25.49
+Miller Genuine Draft 12C +$2.50 to $22.95
 
 Permanent Changes
-Miller Lite 15C +$0.75 to $21.99
-Molson Canadian 18C +$0.50 to $27.49
+Heineken 12B +$0.75 to $25.95
+Coors Banquet 15C +$0.50 to $24.95
 
 SLEEMAN
 Begin LTO
-Sleeman Original Draught 24C -$2.50 to $35.99
+Sleeman Original Draught 24C -$3.50 to $39.95
 
 Permanent Changes
-Sapporo 6C +$0.50 to $12.99
+Sapporo 6C +$0.50 to $14.95
 
 Other
 Begin LTO
-Laker Lager 24C -$3.00 to $29.99
+Laker Lager 24C -$2.50 to $34.95
 
 Permanent Changes
-Guinness Draught 4B +$0.25 to $9.99
-Moosehead Lager 12B +$0.50 to $19.99
+Moosehead Lager 12B +$0.50 to $22.95
+Guinness Draught 6C +$0.75 to $15.95
 
 LICENSEE CHANGES
-Peroni Nastro Azzurro 6B +$1.00 to $14.99
+Peroni Nastro Azzurro 12B +$1.00 to $26.95
 
 NEW SKUs
-James Ready 15C $18.99
-
-Best regards,
-Revenue Management Team
+Bud Light Lemon Lime 12C $29.99
+Corona Sunbrew 12C $27.95
 
 ---
 
-**IMPORTANT NOTE**: The above email contains SAMPLE DATA only for format demonstration purposes. To generate the actual email, please provide the real price_changes_categorized dictionary and effective_date from your data processing. Once provided, I will populate this exact format with your actual product changes, prices, and effective date.
+Best regards,
+Revenue Management Team
