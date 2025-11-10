@@ -36,8 +36,8 @@ Mark spends 30-45 minutes weekly processing TBS price change files. The process 
 - **Attachments:** Excel file (.xlsx)
 
 **Excel Structure:**
-- **Header Rows:** First 6 rows (skip these)
-- **Data Start:** Row 7
+- **Header Rows:** First 7 rows (skip these), Row 8 contains headers
+- **Data Start:** Row 9
 - **Total Records:** ~150-200 product price changes
 
 **Required Columns:**
@@ -130,11 +130,10 @@ RevManFlow (CrewAI Flow)
     ├─ [@listen] excel_processing_crew()  ← CREW 1
     │   ├─ excel_parser_agent
     │   │   ├─ Task: parse_excel_file
+    │   │   ├─ Task: extract_effective_date
     │   │   └─ Task: generate_formula_excel
-    │   ├─ data_analyst_agent
-    │   │   └─ Task: analyze_price_changes
-    │   └─ data_validator_agent
-    │       └─ Task: validate_data_quality
+    │   └─ data_analyst_agent
+    │       └─ Task: analyze_price_changes
     │
     ├─ [@listen] email_generation_crew()  ← CREW 2
     │   └─ email_content_writer_agent
@@ -185,9 +184,9 @@ class RevManFlowState(BaseModel):
 
 **1. excel_parser_agent**
 - **Role:** Excel Data Parser Specialist
-- **Goal:** Parse TBS Excel file starting at row 7, extract all columns
+- **Goal:** Parse TBS Excel file starting at row 9 (after skipping 7 rows and row 8 headers), extract all columns
 - **Key Skills:**
-  - Skip header rows (first 6 rows)
+  - Skip header rows (first 7 rows), row 8 contains headers
   - Handle data type conversions
   - Clean formatting issues
   - Remove null rows
@@ -201,15 +200,6 @@ class RevManFlowState(BaseModel):
   - Group by brewer (LABATT, MOLSON, SLEEMAN)
   - Filter highlights (significant changes only)
 
-**3. data_validator_agent**
-- **Role:** Data Quality Validator
-- **Goal:** Ensure calculations are correct and data is complete
-- **Key Skills:**
-  - Verify: `Old Price - New Price = Change`
-  - Check Begin LTO has negative changes
-  - Check End LTO has positive changes
-  - Flag missing fields or outliers
-
 #### Tasks
 
 **Task 1: parse_excel_file**
@@ -218,7 +208,9 @@ Agent: excel_parser_agent
 Input: {excel_file_path}
 Output: List of dictionaries with all product records
 Key Actions:
-  - Skip rows 1-6
+  - Skip rows 1-7
+  - Row 8 contains headers
+  - Data starts at row 9
   - Extract columns A-M
   - Clean and convert data types
   - Return structured JSON
@@ -305,19 +297,6 @@ Format:
   }
 ```
 
-**Task 5: validate_data_quality**
-```yaml
-Agent: data_validator_agent
-Input: Parsed data + Categorized data
-Output: Validation report + Categorized data (passthrough)
-Key Actions:
-  - Check calculation accuracy
-  - Verify categorization logic
-  - Flag outliers (> $20 changes)
-  - Return BOTH validation report AND categorized data
-Critical: Must output categorized_data for next crew
-```
-
 ---
 
 ### Crew 2: Email Builder Crew
@@ -386,7 +365,7 @@ Reference: data/templates/Output format.docx contains examples of Mark's email f
 - Verify at least one brewer section exists
 - Check for change type sections (Begin LTO, End LTO)
 
-**Status:** ✅ Basic validation implemented, more comprehensive checks deferred to future phase
+**Status:** ✅ Basic validation implemented inline in email generation, data validation agent deferred to future phase
 
 ---
 
@@ -589,7 +568,7 @@ New Product Launch 24C $49.99
 ---
 
 Best regards,
-Revenue Management Team
+Mark Robinson
 ```
 
 ---
@@ -635,11 +614,11 @@ Revenue Management Team
 ### ✅ Completed (POC Phase)
 
 - [x] Flow architecture designed and implemented
-- [x] Excel Processor Crew with 3 agents
+- [x] Excel Processor Crew with 2 agents (excel_parser_agent, data_analyst_agent)
 - [x] Email Builder Crew with 1 agent
 - [x] Formula logic replicated in data_analyst_agent
 - [x] Plain text email generation
-- [x] Basic validation
+- [x] Basic validation (inline in email generation)
 - [x] File output to data/output/
 - [x] Manual trigger via `crewai run`
 

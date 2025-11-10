@@ -17,7 +17,6 @@ from crewai import Agent
 
 from revman.crews.excel_processor_crew import ExcelProcessorCrew
 from revman.crews.email_builder_crew import EmailBuilderCrew
-from revman.tools import EmailValidatorTool
 
 
 # Define file paths using relative path from main.py
