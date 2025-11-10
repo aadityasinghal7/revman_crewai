@@ -87,13 +87,25 @@ The AI agent must produce a draft email with:
 
 **Format:** Plain text email content (not HTML)
 
-**Categorization Rules:**
-- **Permanent Change:** 96% ≤ new price ≤ 104% of old price (Type of Sale = TBS – Retail Price)
-- **Begin LTO:** new price < 96% of old price (Type of Sale = TBS – Retail Price)
-- **End LTO:** new price > 104% of old price (Type of Sale = TBS – Retail Price)
-- **End LTO & Permanent Change:** Same as End LTO, but price does not return to pre-LTO level (requires historical check)
-- **New SKU:** Clearly marked in the file
-- **Licensee Change:** Type of Sale = TBS - Licensee
+**Price Change Categorization Logic:**
+
+1. **Calculate Percentage Column:** For each row, calculate `(new price / old price) * 100` to determine the new price as a percentage of the old price
+
+2. **Filter by Type of Sale:** Categorization rules apply differently based on the "Type of Sale" field:
+
+   **For Type of Sale = "TBS – Retail Price":**
+   - **Permanent Change:** Price change where new price is between 96% and 104% of old price (96% ≤ percentage ≤ 104%)
+   - **Begin LTO:** Price **decrease** where new price < 96% of old price (percentage < 96%)
+   - **End LTO:** Price **increase** where new price > 104% of old price (percentage > 104%)
+   - **End LTO & Permanent Change:** Same as End LTO, but price does not return to pre-LTO level (requires historical check)
+
+   **For Type of Sale = "New SKU":**
+   - Include in separate "NEW SKUs" section (no category label)
+
+   **For Type of Sale = "TBS - Licensee":**
+   - Include in separate "LICENSEE CHANGES" section
+
+3. **No Filtering Rule:** **ALL changes for LABATT, MOLSON, SLEEMAN, and Other groups MUST be included in the email** - do not filter out any changes based on magnitude, significance, or any other criteria
 
 **Reference Template:**
 `data/templates/Output format.docx` contains actual examples of Mark's email format with real product data
@@ -257,16 +269,26 @@ Agent: data_analyst_agent
 Input: Parsed data from Task 1
 Output: Categorized changes grouped by brewer and type
 Key Actions:
+  - Calculate percentage column for each row: (new price / old price) * 100
   - Apply formula logic: PROPER(Product) + PackSize + +/-$Amount + to $NewPrice
-  - Categorize using ±4% threshold rules:
-    * Permanent Change: 96% ≤ new price ≤ 104% of old price
-    * Begin LTO: new price < 96% of old price (>4% decrease)
-    * End LTO: new price > 104% of old price (>4% increase)
-    * End LTO & Perm Change: requires historical price check
-    * New SKU: marked in file
-    * Licensee Change: Type of Sale = "TBS - Licensee"
-  - Filter by Type of Sale (Retail Price vs Licensee)
-  - Group by brewer for retail changes
+  - Categorize based on "Type of Sale" field:
+
+    FOR "Type of Sale" = "TBS – Retail Price":
+      * Permanent Change: 96% ≤ percentage ≤ 104% (price change within ±4%)
+      * Begin LTO: percentage < 96% (price DECREASE > 4%)
+      * End LTO: percentage > 104% (price INCREASE > 4%)
+      * End LTO & Perm Change: requires historical price check (percentage > 104% but not returning to pre-LTO level)
+
+    FOR "Type of Sale" = "New SKU":
+      * Include in "NEW SKUs" section (no category label)
+
+    FOR "Type of Sale" = "TBS - Licensee":
+      * Include in "LICENSEE CHANGES" section
+
+  - Group retail price changes by brewer (LABATT, MOLSON, SLEEMAN, Other)
+  - **CRITICAL: Include ALL changes - do not filter by magnitude or significance**
+  - All changes for LABATT, MOLSON, SLEEMAN, and Other groups must appear in output
+
 Format:
   {
     "LABATT": {
@@ -277,6 +299,7 @@ Format:
     },
     "MOLSON": {...},
     "SLEEMAN": {...},
+    "Other": {...},
     "LICENSEE CHANGES": [...],
     "NEW SKUs": [...]
   }

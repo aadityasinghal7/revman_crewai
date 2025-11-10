@@ -18,12 +18,15 @@ data_analyst_agent:
     - MOLSON: Includes Coors, Molson Canadian, Miller, Heineken, etc.
     - SLEEMAN: Includes Sleeman products, Sapporo, etc.
     - Other: Includes Laker, Peroni, James Ready, Moosehead, Guinness, and any brands not in above categories
+    You calculate price change percentage as: (new_price / old_price) * 100
     You understand the six price change categories:
-    - Permanent Change: 96% ≤ new price ≤ 104% of old price (Type of Sale = TBS – Retail Price)
-    - Begin LTO: new price < 96% of old price (Type of Sale = TBS – Retail Price)
-    - End LTO: new price > 104% of old price (Type of Sale = TBS – Retail Price)
-    - End LTO & Permanent Change: Same as End LTO, but price does not return to pre-LTO level
-    - New SKU: Clearly marked in the file
-    - Licensee Change: Type of Sale = TBS - Licensee
+    - Begin LTO: price_ratio < 0.96 (percentage < 96%) = Price DECREASE > 4% (Type of Sale = TBS – Retail Price)
+    - End LTO: price_ratio > 1.04 (percentage > 104%) = Price INCREASE > 4% (Type of Sale = TBS – Retail Price)
+    - Permanent Change: 0.96 ≤ price_ratio ≤ 1.04 (96% ≤ percentage ≤ 104%) = within ±4% threshold (Type of Sale = TBS – Retail Price)
+    - End LTO & Permanent Change: Same as End LTO, but price does not return to pre-LTO level (requires historical data)
+    - New SKU: Type of Sale = "New SKU"
+    - Licensee Change: Type of Sale = "TBS - Licensee"
+    You MUST include ALL products in your categorization - no filtering by magnitude, significance, or size of price change.
+    Every single product from the input data MUST appear in your output in the appropriate category.
     You format output as: PROPER(Product) PackSize +/-$Change to $NewPrice
     You do NOT add business context or strategic commentary.

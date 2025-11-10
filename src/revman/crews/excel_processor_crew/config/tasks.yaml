@@ -134,20 +134,62 @@ analyze_price_changes:
        - Format: "Product PackSize +/-$X.XX to $YY.YY"
        - ALL licensee products go here, regardless of brewer
 
+       CRITICAL RULES FOR LICENSEE CHANGES:
+       - VALIDATION: EVERY single product where Type of Sale = "TBS - Licensee" MUST appear in the "LICENSEE CHANGES" output
+       - DO NOT deduplicate products based on product name, brewer, or pack size
+       - If a product exists as both "TBS - Retail Price" AND "TBS - Licensee", include BOTH versions in their respective categories
+       - Pack size (whether 1, 12, 24, etc.) is IRRELEVANT - include all licensee products regardless
+       - Brewer name is IRRELEVANT - include all licensee products regardless
+       - Price change percentage is IRRELEVANT - include all licensee products regardless
+       - The ONLY criterion is: Type of Sale = "TBS - Licensee"
+       - VERIFICATION: Count licensee products in the parsed input data. The "LICENSEE CHANGES" output MUST contain the same count.
+
+       Examples of licensee products that MUST be included:
+       - HEINEKEN CANADA INC products (e.g., "Heineken Nv 24B", "Heineken Silver 24B")
+       - NICKEL BROOK BREWING COMPANY INC products (e.g., "Headstock Ipa 24B", "Naughty Neighbour 24B")
+       - STEAM WHISTLE BREWING INC products (e.g., "Steam Whistle 24C", "Steam Whistle 1")
+       - BEAU'S ALL NATURAL BREWING CO LTD products (e.g., "Barnburner Amber Ale 1")
+       - ASAHI BREWERIES LTD products (e.g., "Asahi Super Dry 1")
+       - Any other product where Type of Sale = "TBS - Licensee"
+
     2. NEW SKUs:
-       - If marked as New SKU → Add to "NEW SKUs" category
+       - If Type of Sale = "New SKU" → Add to "NEW SKUs" category
        - Format: "Product PackSize $YY.YY"
+
+       CRITICAL RULES FOR NEW SKUs:
+       - VALIDATION: EVERY single product where Type of Sale = "New SKU" MUST appear in the "NEW SKUs" output
+       - DO NOT deduplicate products based on any criteria
+       - DO NOT filter based on brewer, pack size, or price
+       - New SKUs are ALWAYS categorized here regardless of brewer hierarchy or other attributes
+       - The ONLY criterion is: Type of Sale = "New SKU"
+       - VERIFICATION: Count New SKU products in the parsed input data. The "NEW SKUs" output MUST contain the same count.
 
     3. RETAIL PRODUCTS (Type of Sale = "TBS – Retail Price"):
        - First, assign to parent brewer (LABATT, MOLSON, SLEEMAN, or Other) using hierarchy above
        - Then categorize by price change using ±4% threshold:
-         * Calculate: price_ratio = new_price / old_price
-         * If price_ratio < 0.96: "Begin LTO"
-         * If price_ratio > 1.04: "End LTO" (or "End LTO & Permanent Change" if price doesn't return to pre-LTO)
-         * If 0.96 ≤ price_ratio ≤ 1.04: "Permanent Changes"
+         * Calculate percentage: price_percentage = (new_price / old_price) * 100
+         * Calculate ratio: price_ratio = new_price / old_price
+         * If price_ratio < 0.96 (percentage < 96%): "Begin LTO" (Price DECREASE > 4%)
+         * If price_ratio > 1.04 (percentage > 104%): "End LTO" (Price INCREASE > 4%)
+           - OR "End LTO & Permanent Change" if price doesn't return to pre-LTO level (requires historical data)
+         * If 0.96 ≤ price_ratio ≤ 1.04 (96% ≤ percentage ≤ 104%): "Permanent Changes" (within ±4% threshold)
        - Format: "Product PackSize +/-$X.XX to $YY.YY"
 
-    CRITICAL: Process ALL licensee products (Type of Sale = "TBS - Licensee") into the "LICENSEE CHANGES" category BEFORE assigning any products to brewers.
+       CRITICAL FILTERING RULES FOR RETAIL PRODUCTS:
+       - Include EVERY product where Type of Sale = "TBS – Retail Price"
+       - DO NOT filter based on price change magnitude (include $0.01 changes and $20.00 changes alike)
+       - DO NOT exclude small changes or insignificant price movements
+       - DO NOT skip any products for any reason
+       - ALL products from LABATT, MOLSON, SLEEMAN, and Other MUST appear in output
+       - VERIFICATION: Count retail products in parsed input data. Output retail products MUST match this count.
+
+    CRITICAL PROCESSING ORDER:
+    1. FIRST: Process ALL products where Type of Sale = "TBS - Licensee" into "LICENSEE CHANGES" category
+    2. SECOND: Process ALL products where Type of Sale = "New SKU" into "NEW SKUs" category
+    3. THIRD: Process retail products (Type of Sale = "TBS – Retail Price") into brewer categories
+
+    DO NOT assign licensee or New SKU products to brewer categories (LABATT, MOLSON, SLEEMAN, Other).
+    DO NOT skip any licensee or New SKU products for any reason.
 
   expected_output: |
     IMPORTANT: Output MUST be valid JSON ONLY - no text before or after, no markdown formatting, no code blocks.

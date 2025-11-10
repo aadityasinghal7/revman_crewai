@@ -66,8 +66,6 @@ write_highlights_content:
 
     Highlights (Price Before Tax and Deposit)
 
-    Note: Pack size notation - C = 355mL can, TC = 473mL tall can, B = bottle
-
     LABATT
     Begin LTO
     Product lines...
@@ -114,7 +112,7 @@ write_highlights_content:
     ---
 
     Best regards,
-    Revenue Management Team
+    Mark Robinson
 
     The output should be:
     - Plain text format (NOT HTML)
