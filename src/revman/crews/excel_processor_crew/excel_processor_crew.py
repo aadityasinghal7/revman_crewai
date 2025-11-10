@@ -25,7 +25,7 @@ class ExcelProcessorCrew:
         return Agent(
             config=self.agents_config["data_analyst_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            tools=[PriceCalculatorTool(), ExcelReaderTool()],
+            tools=[PriceCalculatorTool()],
             verbose=False,  # Disabled for performance - timing tracked in main.py
         )
 

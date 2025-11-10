@@ -113,6 +113,11 @@ analyze_price_changes:
   description: |
     Analyze and categorize price change data for highlights email using the 6-category system.
 
+    DATA SOURCE:
+    - Use the parsed data from the parse_excel_file task (available via context)
+    - DO NOT read the Excel file again - all data has already been parsed and is available
+    - All product records with complete column data are available from the previous task
+
     BREWER HIERARCHY AND BRAND MAPPING:
     Map individual brands to their parent brewers using this hierarchy:
     - LABATT: Includes Budweiser, Bud Light, Stella Artois, Corona, Modelo, Becks, Hoegaarden, Michelob, etc.

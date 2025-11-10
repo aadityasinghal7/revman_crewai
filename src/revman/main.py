@@ -179,7 +179,7 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.excel_parser_agent()],
                     tasks=[crew_instance.parse_excel_file()],
                     process=Process.sequential,
-                    verbose=True,
+                    verbose=False,
                     full_output=True,
                 )
                 .kickoff(inputs={
@@ -200,6 +200,9 @@ class RevManFlow(Flow[RevManFlowState]):
             self._step_times['parse_excel'] = step_duration
             print(f"[OK] Excel file parsed")
             print(f"[TIMING] Parse excel: {self._format_duration(step_duration)}")
+            print(f"\n✓ [2a COMPLETE] Proceeding to Step 2b...\n")
+            import sys
+            sys.stdout.flush()
 
         except Exception as e:
             print(f"[ERROR] Error parsing Excel: {str(e)}")
@@ -224,7 +227,7 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.excel_parser_agent()],
                     tasks=[crew_instance.extract_effective_date()],
                     process=Process.sequential,
-                    verbose=True,
+                    verbose=False,
                     full_output=True,
                 )
                 .kickoff(inputs={
@@ -249,6 +252,9 @@ class RevManFlow(Flow[RevManFlowState]):
             step_duration = time.time() - step_start
             self._step_times['extract_date'] = step_duration
             print(f"[TIMING] Extract date: {self._format_duration(step_duration)}")
+            print(f"\n✓ [2b COMPLETE] Proceeding to Step 2c...\n")
+            import sys
+            sys.stdout.flush()
 
         except Exception as e:
             print(f"[ERROR] Error extracting date: {str(e)}")
@@ -273,7 +279,7 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.excel_parser_agent()],
                     tasks=[crew_instance.generate_formula_excel()],
                     process=Process.sequential,
-                    verbose=True,
+                    verbose=False,
                     full_output=True,
                 )
                 .kickoff(inputs={
@@ -287,6 +293,9 @@ class RevManFlow(Flow[RevManFlowState]):
             self._step_times['generate_formula'] = step_duration
             print(f"[OK] Formula Excel generated")
             print(f"[TIMING] Generate formula: {self._format_duration(step_duration)}")
+            print(f"\n✓ [2c COMPLETE] Proceeding to Step 2d...\n")
+            import sys
+            sys.stdout.flush()
 
         except Exception as e:
             print(f"[ERROR] Error generating formula Excel: {str(e)}")
@@ -311,7 +320,7 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.data_analyst_agent()],
                     tasks=[crew_instance.analyze_price_changes()],
                     process=Process.sequential,
-                    verbose=True,
+                    verbose=False,
                     full_output=True,
                 )
                 .kickoff(inputs={
@@ -331,6 +340,9 @@ class RevManFlow(Flow[RevManFlowState]):
             self._step_times['analyze_prices'] = step_duration
             print(f"[OK] Price changes analyzed")
             print(f"[TIMING] Analyze prices: {self._format_duration(step_duration)}")
+            print(f"\n✓ [2d COMPLETE] Proceeding to Step 2e...\n")
+            import sys
+            sys.stdout.flush()
 
         except Exception as e:
             print(f"[ERROR] Error analyzing prices: {str(e)}")
@@ -355,7 +367,7 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.data_validator_agent()],
                     tasks=[crew_instance.validate_data_quality()],
                     process=Process.sequential,
-                    verbose=True,
+                    verbose=False,
                     full_output=True,
                 )
                 .kickoff(inputs={
@@ -385,6 +397,9 @@ class RevManFlow(Flow[RevManFlowState]):
             self._step_times['validate_quality'] = step_duration
             print(f"[OK] Data quality validated")
             print(f"[TIMING] Validate quality: {self._format_duration(step_duration)}")
+            print(f"\n✓ [2e COMPLETE] Proceeding to Step 3...\n")
+            import sys
+            sys.stdout.flush()
 
         except Exception as e:
             print(f"[ERROR] Error validating data quality: {str(e)}")
