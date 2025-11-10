@@ -29,14 +29,6 @@ class ExcelProcessorCrew:
             verbose=True,  # Enabled for debugging - shows agent reasoning
         )
 
-    @agent
-    def data_validator_agent(self) -> Agent:
-        return Agent(
-            config=self.agents_config["data_validator_agent"],
-            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            verbose=True,  # Enabled for debugging - shows agent reasoning
-        )
-
     @task
     def parse_excel_file(self) -> Task:
         return Task(
@@ -59,12 +51,6 @@ class ExcelProcessorCrew:
     def analyze_price_changes(self) -> Task:
         return Task(
             config=self.tasks_config["analyze_price_changes"],
-        )
-
-    @task
-    def validate_data_quality(self) -> Task:
-        return Task(
-            config=self.tasks_config["validate_data_quality"],
         )
 
     @crew

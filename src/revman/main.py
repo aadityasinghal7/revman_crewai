@@ -183,20 +183,17 @@ class RevManFlow(Flow[RevManFlowState]):
             # Run all tasks together in one Crew execution
             # This allows task context to work properly:
             # - analyze_price_changes can access parse_excel_file output via context
-            # - validate_data_quality can access both parse and analyze outputs via context
             result = (
                 Crew(
                     agents=[
                         crew_instance.excel_parser_agent(),
                         crew_instance.data_analyst_agent(),
-                        crew_instance.data_validator_agent(),
                     ],
                     tasks=[
                         crew_instance.parse_excel_file(),
                         crew_instance.extract_effective_date(),
                         crew_instance.generate_formula_excel(),
                         crew_instance.analyze_price_changes(),
-                        crew_instance.validate_data_quality(),
                     ],
                     process=Process.sequential,
                     verbose=True,  # Enable verbose to see data flow
@@ -208,7 +205,7 @@ class RevManFlow(Flow[RevManFlowState]):
                 })
             )
 
-            # Extract results from the final task (validate_data_quality)
+            # Extract results from the final task (analyze_price_changes)
             result_str = result.raw if hasattr(result, 'raw') else str(result)
 
             # Parse the final output
@@ -216,9 +213,17 @@ class RevManFlow(Flow[RevManFlowState]):
                 if isinstance(result_str, str) and result_str.startswith('{'):
                     result_data = json.loads(result_str)
 
-                    # Extract categorized data
-                    if isinstance(result_data, dict) and "categorized_data" in result_data:
-                        self._price_changes_categorized = result_data["categorized_data"]
+                    # Direct extraction - no wrapper needed
+                    if isinstance(result_data, dict):
+                        self._price_changes_categorized = result_data
+
+                        # DEBUG: Print the actual categorized data structure
+                        print("\n" + "="*60)
+                        print("[DEBUG] Raw result_data from analyze_price_changes:")
+                        print("="*60)
+                        print(json.dumps(result_data, indent=2, default=str))
+                        print("="*60 + "\n")
+
                         print(f"[OK] Price changes categorized and extracted")
 
                         # Validate we actually have data
@@ -233,19 +238,35 @@ class RevManFlow(Flow[RevManFlowState]):
 
                         print(f"[OK] Total products categorized: {total_products}")
 
+                        # DEBUG: Show what's in each category
+                        print("\n" + "="*60)
+                        print("[DEBUG] Category breakdown:")
+                        print("="*60)
+                        for brewer, categories in self._price_changes_categorized.items():
+                            print(f"\n{brewer}:")
+                            if isinstance(categories, dict):
+                                for category, products in categories.items():
+                                    if isinstance(products, list):
+                                        print(f"  {category}: {len(products)} products")
+                                        if len(products) > 0:
+                                            print(f"    Sample: {products[0]}")
+                                    else:
+                                        print(f"  {category}: {products}")
+                            elif isinstance(categories, list):
+                                print(f"  {len(categories)} products")
+                                if len(categories) > 0:
+                                    print(f"    Sample: {categories[0]}")
+                        print("="*60 + "\n")
+
                         # Validate we have actual data
                         if total_products == 0:
                             raise ValueError(
                                 "No products were categorized. This likely means the data parsing or "
                                 "categorization failed. Check verbose output above for details."
                             )
-
-                        if "validation" in result_data:
-                            self._validation_info = result_data["validation"]
-                            print(f"[OK] Validation info extracted")
                     else:
-                        self._price_changes_categorized = result_data
-                        print(f"[WARNING] Unexpected result format - using raw data")
+                        self._price_changes_categorized = {"raw_output": result_str}
+                        print(f"[WARNING] Unexpected result format - storing as raw output")
                 else:
                     self._price_changes_categorized = {"raw_output": result_str}
                     print(f"[WARNING] Non-JSON result - storing as raw output")
@@ -280,7 +301,7 @@ class RevManFlow(Flow[RevManFlowState]):
             self._step_times['excel_processing'] = step_duration
             print(f"[OK] Excel processing complete")
             print(f"[TIMING] Excel processing: {self._format_duration(step_duration)}")
-            print(f"\n✓ [STEP 2 COMPLETE] Proceeding to Step 3...\n")
+            print(f"\n[OK] [STEP 2 COMPLETE] Proceeding to Step 3...\n")
             import sys
             sys.stdout.flush()
 

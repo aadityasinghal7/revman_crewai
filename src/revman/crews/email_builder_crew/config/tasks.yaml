@@ -2,11 +2,11 @@ write_highlights_content:
   description: |
     Transform the categorized price change data into a complete email with subject line, opening text, and highlights.
 
-    INPUT DATA:
-    - price_changes_categorized: A dictionary with brewers as keys and their price changes categorized by type
-    - effective_date: The effective date for the price changes (e.g., "October 13, 2025")
+    INPUT DATA (provided via inputs):
+    - effective_date: {effective_date}
+    - price_changes_categorized: {price_changes_categorized}
 
-    Use ALL the data provided - do NOT use placeholder values.
+    CRITICAL: Use the ACTUAL DATA from price_changes_categorized above - do NOT use placeholder values or make up data.
 
     REQUIRED STRUCTURE:
     1. Subject Line: "TBS Price Change Summary – Effective {effective_date}"

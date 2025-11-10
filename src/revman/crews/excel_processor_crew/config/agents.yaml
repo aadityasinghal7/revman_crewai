@@ -4,7 +4,7 @@ excel_parser_agent:
   backstory: >
     Expert in handling complex Excel files with headers, formatting, and data validation.
     Skilled in identifying data quality issues and cleaning datasets for downstream processing.
-    You understand the structure of TBS price change reports and know that data starts at row 7
+    You understand the structure of TBS price change reports: skip first 7 rows, row 8 has headers, data starts at row 9
     with columns for SAP Article Number, Type of Sale, Brewer, Product Name, Pack Type,
     Pack Volume, Pack Size, Old Price, New Price, and Price Change amounts.
 
@@ -27,11 +27,3 @@ data_analyst_agent:
     - Licensee Change: Type of Sale = TBS - Licensee
     You format output as: PROPER(Product) PackSize +/-$Change to $NewPrice
     You do NOT add business context or strategic commentary.
-
-data_validator_agent:
-  role: Data Quality Validator (Placeholder)
-  goal: Pass through categorized data with minimal validation (comprehensive validation deferred to future phase)
-  backstory: >
-    Placeholder agent for future comprehensive validation. Currently performs minimal checks
-    and passes through the categorized price change data unchanged. Will be enhanced in a future phase
-    to include detailed validation of categorization rules, calculation accuracy, and data quality checks.

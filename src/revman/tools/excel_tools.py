@@ -14,7 +14,7 @@ import os
 class ExcelReaderInput(BaseModel):
     """Input schema for ExcelReaderTool"""
     file_path: str = Field(..., description="Path to the Excel file to read")
-    skip_rows: int = Field(6, description="Number of rows to skip before header (default: 6 for TBS reports)")
+    skip_rows: int = Field(7, description="Number of rows to skip before header (default: 7 for TBS reports)")
 
 
 class ExcelReaderTool(BaseTool):
@@ -25,13 +25,13 @@ class ExcelReaderTool(BaseTool):
     )
     args_schema: type[BaseModel] = ExcelReaderInput
 
-    def _run(self, file_path: str, skip_rows: int = 6) -> str:
+    def _run(self, file_path: str, skip_rows: int = 7) -> str:
         """
         Read and parse Excel file
 
         Args:
             file_path: Path to Excel file
-            skip_rows: Number of rows to skip (default 6 for TBS reports)
+            skip_rows: Number of rows to skip (default 7 for TBS reports)
 
         Returns:
             JSON string with parsed data
@@ -42,8 +42,9 @@ class ExcelReaderTool(BaseTool):
             if not file_path_obj.exists():
                 return f"Error: File not found at {file_path}"
 
-            # Read with pandas, skipping header rows
-            df = pd.read_excel(file_path, skiprows=skip_rows)
+            # Read with pandas, skipping header rows and reading only the first 12 columns (A-L)
+            # This avoids duplicate column names from None columns
+            df = pd.read_excel(file_path, skiprows=skip_rows, usecols="A:L")
 
             # Clean column names (remove whitespace, newlines)
             df.columns = df.columns.str.strip().str.replace('\n', ' ')
@@ -224,7 +225,7 @@ class FormulaExcelGeneratorInput(BaseModel):
     """Input schema for FormulaExcelGeneratorTool"""
     input_file_path: str = Field(..., description="Path to the input Excel file")
     output_dir: str = Field(..., description="Directory where the formula Excel file will be saved")
-    skip_rows: int = Field(6, description="Number of header rows to skip before data starts (default: 6 for TBS reports)")
+    skip_rows: int = Field(7, description="Number of header rows to skip before data starts (default: 7 for TBS reports)")
     formula_column: str = Field("N", description="Column letter where formula should be added (default: N)")
 
 
@@ -237,14 +238,14 @@ class FormulaExcelGeneratorTool(BaseTool):
     )
     args_schema: type[BaseModel] = FormulaExcelGeneratorInput
 
-    def _run(self, input_file_path: str, output_dir: str, skip_rows: int = 6, formula_column: str = "N") -> str:
+    def _run(self, input_file_path: str, output_dir: str, skip_rows: int = 7, formula_column: str = "N") -> str:
         """
         Generate Excel file with formulas added
 
         Args:
             input_file_path: Path to input Excel file
             output_dir: Directory to save output file
-            skip_rows: Number of header rows to skip (default 6)
+            skip_rows: Number of header rows to skip (default 7)
             formula_column: Column to add formula (default N)
 
         Returns:
