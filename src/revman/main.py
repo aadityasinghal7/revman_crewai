@@ -49,16 +49,11 @@ class RevManFlow(Flow[RevManFlowState]):
     2d. Analyze price changes
     2e. Validate data quality
     3. Email generation (Crew 2)
-    4. Validation (pass-through)
-    5. Output saving
+    4. Output saving
     """
 
     def __init__(self):
         super().__init__()
-        # Timing tracking
-        self._flow_start_time = None
-        self._step_times = {}
-
         # Internal state - auto-generated, not from kickoff
         self._trigger_date: datetime = None  # Will be set to datetime.now() in trigger_flow
         self._effective_date: datetime = None  # Will be extracted from filename by Excel processor crew
@@ -75,51 +70,14 @@ class RevManFlow(Flow[RevManFlowState]):
         self._validation_report: Dict[str, Any] = {}
         self._validation_passed: bool = False
 
-    def _format_duration(self, seconds: float) -> str:
-        """Format duration in human-readable format"""
-        if seconds < 1:
-            return f"{seconds*1000:.0f}ms"
-        elif seconds < 60:
-            return f"{seconds:.1f}s"
-        else:
-            minutes = int(seconds // 60)
-            secs = int(seconds % 60)
-            return f"{minutes}m {secs}s"
-
-    def _print_performance_summary(self):
-        """Print performance summary with timing breakdown"""
-        if not self._flow_start_time:
-            return
-
-        total_time = time.time() - self._flow_start_time
-
-        print("\n" + "=" * 60)
-        print("[PERFORMANCE SUMMARY]")
-        print("=" * 60)
-
-        # Sort by duration (longest first)
-        sorted_steps = sorted(self._step_times.items(), key=lambda x: x[1], reverse=True)
-
-        for step_name, duration in sorted_steps:
-            percentage = (duration / total_time) * 100
-            formatted_name = step_name.replace('_', ' ').title()
-            print(f"  {formatted_name:25s}: {self._format_duration(duration):>8s} ({percentage:5.1f}%)")
-
-        print("-" * 60)
-        print(f"  {'TOTAL EXECUTION TIME':25s}: {self._format_duration(total_time):>8s} (100.0%)")
-        print("=" * 60)
-
     @start()
-    def step_1_trigger(self, crewai_trigger_payload: dict = None):
+    def trigger(self, crewai_trigger_payload: dict = None):
         """
         Initialize flow from trigger
 
         For POC: Accept file path as parameter (manual trigger)
         For Phase 2: Extract Excel from email (automatic trigger)
         """
-        self._flow_start_time = time.time()
-        step_start = time.time()
-
         # Auto-generate internal state
         self._trigger_date = datetime.now()
         self._email_recipients = os.getenv(
@@ -153,21 +111,14 @@ class RevManFlow(Flow[RevManFlowState]):
 
         # Update state with resolved absolute path
         self.state.excel_file_path = str(excel_path)
-        print(f"[OK] Input file validated")
+        print(f"[OK] Input file validated\n")
 
-        # Record timing
-        step_duration = time.time() - step_start
-        self._step_times['trigger_validation'] = step_duration
-        print(f"[TIMING] Trigger validation: {self._format_duration(step_duration)}\n")
-
-    @listen(step_1_trigger)
-    def step_2_process_excel(self):
+    @listen(trigger)
+    def process_excel(self):
         """
         Consolidated Excel Processing Step - Run all Excel tasks in single Crew execution
         This allows proper task context chaining for data flow between tasks
         """
-        step_start = time.time()
-
         print("\n" + "-" * 60)
         print("[EXCEL] Step 2: Process Excel File (Consolidated)")
         print("-" * 60)
@@ -176,29 +127,11 @@ class RevManFlow(Flow[RevManFlowState]):
         print("-" * 60)
 
         try:
-            # Create crew with ALL Excel processor tasks
-            from crewai import Crew, Process
-            crew_instance = ExcelProcessorCrew()
-
-            # Run all tasks together in one Crew execution
-            # This allows task context to work properly:
-            # - analyze_price_changes can access parse_excel_file output via context
+            # Run Excel processor crew using standard .crew() method
+            # This enables proper task tracking on app.crewai.com
             result = (
-                Crew(
-                    agents=[
-                        crew_instance.excel_parser_agent(),
-                        crew_instance.data_analyst_agent(),
-                    ],
-                    tasks=[
-                        crew_instance.parse_excel_file(),
-                        crew_instance.extract_effective_date(),
-                        crew_instance.generate_formula_excel(),
-                        crew_instance.analyze_price_changes(),
-                    ],
-                    process=Process.sequential,
-                    verbose=True,  # Enable verbose to see data flow
-                    full_output=True,
-                )
+                ExcelProcessorCrew()
+                .crew()
                 .kickoff(inputs={
                     "excel_file_path": self.state.excel_file_path,
                     "output_dir": str(OUTPUT_DIR),
@@ -297,10 +230,7 @@ class RevManFlow(Flow[RevManFlowState]):
                 self._effective_date = self._trigger_date
                 print(f"[WARNING] Using trigger date as fallback: {self._effective_date.strftime('%B %d, %Y')}")
 
-            step_duration = time.time() - step_start
-            self._step_times['excel_processing'] = step_duration
             print(f"[OK] Excel processing complete")
-            print(f"[TIMING] Excel processing: {self._format_duration(step_duration)}")
             print(f"\n[OK] [STEP 2 COMPLETE] Proceeding to Step 3...\n")
             import sys
             sys.stdout.flush()
@@ -311,14 +241,12 @@ class RevManFlow(Flow[RevManFlowState]):
             traceback.print_exc()
             raise
 
-    @listen(step_2_process_excel)
-    def step_3_email_generation(self):
+    @listen(process_excel)
+    def email_generation(self):
         """
         Run Email Builder Crew (Crew 2)
         - Generate highlights content in plain text template format
         """
-        step_start = time.time()
-
         print("\n" + "-" * 60)
         print("[EMAIL] Step 3: Email Content Generation")
         print("-" * 60)
@@ -344,10 +272,7 @@ class RevManFlow(Flow[RevManFlowState]):
                 })
             )
 
-            step_duration = time.time() - step_start
-            self._step_times['email_generation'] = step_duration
             print(f"[OK] Email content generation completed")
-            print(f"[TIMING] Email generation: {self._format_duration(step_duration)}")
 
             # Extract email content from result
             result_str = result.raw if hasattr(result, 'raw') else str(result)
@@ -364,45 +289,13 @@ class RevManFlow(Flow[RevManFlowState]):
             print(f"[ERROR] {error_msg}")
             raise
 
-    @listen(step_3_email_generation)
-    def step_4_validation(self):
-        """Validation (pass-through for now)"""
-        step_start = time.time()
-
-        print("\n" + "-" * 60)
-        print("[VALIDATION] Step 4: Validation (Pass-Through)")
-        print("-" * 60)
-
-        try:
-            # Simple pass-through - store minimal validation data
-            self._validation_report = {
-                "validation_status": "PASS",
-                "quality_score": 100,
-                "critical_issues": [],
-                "warnings": []
-            }
-            self._validation_passed = True
-
-            print(f"[OK] Validation PASS (pass-through mode)")
-
-            step_duration = time.time() - step_start
-            self._step_times['validation'] = step_duration
-            print(f"[TIMING] Validation: {self._format_duration(step_duration)}")
-
-        except Exception as e:
-            print(f"[ERROR] Error in validation: {str(e)}")
-            raise
-
-    @listen(step_4_validation)
-    def step_5_save_output(self):
+    @listen(email_generation)
+    def save_output(self):
         """
         Save generated email to output directory
         - Save plain text email in template format
         - Save metadata
-        - Save validation report
         """
-        step_start = time.time()
-
         print("\n" + "-" * 60)
         print("[SAVE] Step 4: Save Output")
         print("-" * 60)
@@ -428,26 +321,12 @@ class RevManFlow(Flow[RevManFlowState]):
                 "trigger_date": self._trigger_date.isoformat(),
                 "effective_date": self._effective_date.isoformat(),
                 "input_file": self.state.excel_file_path,
-                "validation_passed": self._validation_passed,
                 "recipients": self._email_recipients,
             }
             metadata_path = OUTPUT_DIR / f"{base_filename}_metadata.json"
             with open(metadata_path, 'w', encoding='utf-8') as f:
                 json.dump(metadata, f, indent=2)
             print(f"[OK] Saved metadata: {metadata_path}")
-
-            # Save validation report
-            report_path = OUTPUT_DIR / f"{base_filename}_validation.json"
-            with open(report_path, 'w', encoding='utf-8') as f:
-                json.dump(self._validation_report, f, indent=2)
-            print(f"[OK] Saved validation report: {report_path}")
-
-            step_duration = time.time() - step_start
-            self._step_times['save_output'] = step_duration
-            print(f"[TIMING] Save output: {self._format_duration(step_duration)}")
-
-            # Print performance summary
-            self._print_performance_summary()
 
             print("\n" + "=" * 60)
             print("[SUCCESS] RevMan Flow Completed Successfully!")
