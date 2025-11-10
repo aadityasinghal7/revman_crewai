@@ -440,7 +440,7 @@ crewai run
 
 This uses the default file path configured in `RevManFlowState`:
 ```python
-excel_file_path: str = r"C:\Users\...\data\input\TBS Price Change Summary Report - October 13th'25.xlsx"
+excel_file_path: str = r"C:\Users\...\data\input\"
 ```
 
 **With Custom Trigger Payload:**

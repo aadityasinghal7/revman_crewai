@@ -9,7 +9,8 @@
       "WebFetch(domain:help.crewai.com)",
       "Bash(dir:*)",
       "Bash(nul)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

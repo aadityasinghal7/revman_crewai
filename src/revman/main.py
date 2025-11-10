@@ -179,7 +179,8 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.excel_parser_agent()],
                     tasks=[crew_instance.parse_excel_file()],
                     process=Process.sequential,
-                    verbose=False,
+                    verbose=True,
+                    full_output=True,
                 )
                 .kickoff(inputs={
                     "excel_file_path": self.state.excel_file_path,
@@ -223,7 +224,8 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.excel_parser_agent()],
                     tasks=[crew_instance.extract_effective_date()],
                     process=Process.sequential,
-                    verbose=False,
+                    verbose=True,
+                    full_output=True,
                 )
                 .kickoff(inputs={
                     "excel_file_path": self.state.excel_file_path,
@@ -271,7 +273,8 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.excel_parser_agent()],
                     tasks=[crew_instance.generate_formula_excel()],
                     process=Process.sequential,
-                    verbose=False,
+                    verbose=True,
+                    full_output=True,
                 )
                 .kickoff(inputs={
                     "excel_file_path": self.state.excel_file_path,
@@ -308,7 +311,8 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.data_analyst_agent()],
                     tasks=[crew_instance.analyze_price_changes()],
                     process=Process.sequential,
-                    verbose=False,
+                    verbose=True,
+                    full_output=True,
                 )
                 .kickoff(inputs={
                     "excel_file_path": self.state.excel_file_path,
@@ -351,7 +355,8 @@ class RevManFlow(Flow[RevManFlowState]):
                     agents=[crew_instance.data_validator_agent()],
                     tasks=[crew_instance.validate_data_quality()],
                     process=Process.sequential,
-                    verbose=False,
+                    verbose=True,
+                    full_output=True,
                 )
                 .kickoff(inputs={
                     "raw_data": self._raw_data,
