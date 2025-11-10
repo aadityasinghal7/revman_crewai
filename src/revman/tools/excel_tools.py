@@ -60,7 +60,7 @@ class ExcelReaderTool(BaseTool):
                 "file_path": str(file_path),
                 "total_records": len(records),
                 "columns": list(df.columns),
-                "records": records[:10],  # First 10 for preview
+                "records": records,  # Return all records (no longer limiting to preview)
                 "full_record_count": len(records),
                 "message": f"Successfully parsed {len(records)} records from Excel file"
             }

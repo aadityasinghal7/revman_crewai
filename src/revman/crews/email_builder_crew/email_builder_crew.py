@@ -14,7 +14,7 @@ class EmailBuilderCrew:
         return Agent(
             config=self.agents_config["email_content_writer_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            verbose=False,  # Disabled for performance - timing tracked in main.py
+            verbose=True,  # Enabled for debugging - shows agent reasoning
         )
 
     @task
@@ -30,5 +30,5 @@ class EmailBuilderCrew:
             agents=self.agents,  # Automatically includes all @agent decorated methods
             tasks=self.tasks,  # Automatically includes all @task decorated methods
             process=Process.sequential,
-            verbose=False,
+            verbose=True,  # Enabled for debugging
         )

@@ -17,7 +17,7 @@ class ExcelProcessorCrew:
             config=self.agents_config["excel_parser_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
             tools=[ExcelReaderTool(), DataCleanerTool(), FormulaExcelGeneratorTool(), DateExtractorTool()],
-            verbose=False,  # Disabled for performance - timing tracked in main.py
+            verbose=True,  # Enabled for debugging - shows agent reasoning
         )
 
     @agent
@@ -26,7 +26,7 @@ class ExcelProcessorCrew:
             config=self.agents_config["data_analyst_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
             tools=[PriceCalculatorTool()],
-            verbose=False,  # Disabled for performance - timing tracked in main.py
+            verbose=True,  # Enabled for debugging - shows agent reasoning
         )
 
     @agent
@@ -34,7 +34,7 @@ class ExcelProcessorCrew:
         return Agent(
             config=self.agents_config["data_validator_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            verbose=False,  # Disabled for performance - timing tracked in main.py
+            verbose=True,  # Enabled for debugging - shows agent reasoning
         )
 
     @task
@@ -74,5 +74,5 @@ class ExcelProcessorCrew:
             agents=self.agents,  # Automatically includes all @agent decorated methods
             tasks=self.tasks,  # Automatically includes all @task decorated methods
             process=Process.sequential,
-            verbose=False,  # Disabled for performance - timing tracked in main.py
+            verbose=True,  # Enabled for debugging
         )
