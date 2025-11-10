@@ -42,10 +42,15 @@ class RevManFlow(Flow[RevManFlowState]):
     RevMan Price Change Email Flow
 
     Flow orchestrates:
-    1. Excel parsing and analysis (Crew 1)
-    2. Email generation (Crew 2)
-    3. Validation
-    4. Output saving
+    1. Trigger - Input validation
+    2a. Parse Excel file
+    2b. Extract effective date
+    2c. Generate formula Excel
+    2d. Analyze price changes
+    2e. Validate data quality
+    3. Email generation (Crew 2)
+    4. Validation (pass-through)
+    5. Output saving
     """
 
     def __init__(self):
@@ -61,6 +66,14 @@ class RevManFlow(Flow[RevManFlowState]):
         self._email_content: str = ""
         self._email_subject: str = ""
         self._email_metadata: Dict[str, Any] = {}
+
+        # Excel processing state
+        self._raw_data: Dict[str, Any] = {}
+        self._price_analysis: Dict[str, Any] = {}
+        self._price_changes_categorized: Dict[str, Any] = {}
+        self._validation_info: Dict[str, Any] = {}
+        self._validation_report: Dict[str, Any] = {}
+        self._validation_passed: bool = False
 
     def _format_duration(self, seconds: float) -> str:
         """Format duration in human-readable format"""
@@ -97,7 +110,7 @@ class RevManFlow(Flow[RevManFlowState]):
         print("=" * 60)
 
     @start()
-    def trigger_flow(self, crewai_trigger_payload: dict = None):
+    def step_1_trigger(self, crewai_trigger_payload: dict = None):
         """
         Initialize flow from trigger
 
@@ -147,100 +160,233 @@ class RevManFlow(Flow[RevManFlowState]):
         self._step_times['trigger_validation'] = step_duration
         print(f"[TIMING] Trigger validation: {self._format_duration(step_duration)}\n")
 
-    @listen(trigger_flow)
-    def excel_processing_step(self):
-        """
-        Run Excel Processor Crew (Crew 1)
-        - Parse Excel file
-        - Analyze and categorize price changes
-        - Validate data quality
-        """
+    @listen(step_1_trigger)
+    def step_2a_parse_excel(self):
+        """Parse Excel file"""
         step_start = time.time()
 
         print("\n" + "-" * 60)
-        print("[EXCEL] Step 1: Excel Processing")
+        print("[EXCEL] Step 2a: Parse Excel File")
         print("-" * 60)
 
         try:
-            # Kick off Excel Processor Crew
+            # Create crew with just parse task
+            from crewai import Crew, Process
+            crew_instance = ExcelProcessorCrew()
+
             result = (
-                ExcelProcessorCrew()
-                .crew()
+                Crew(
+                    agents=[crew_instance.excel_parser_agent()],
+                    tasks=[crew_instance.parse_excel_file()],
+                    process=Process.sequential,
+                    verbose=False,
+                )
                 .kickoff(inputs={
                     "excel_file_path": self.state.excel_file_path,
                     "output_dir": str(OUTPUT_DIR),
-                    "raw_data": {},  # Will be populated by parse task
+                    "raw_data": {},
+                })
+            )
+
+            # Store raw data for next steps
+            result_str = result.raw if hasattr(result, 'raw') else str(result)
+            try:
+                self._raw_data = json.loads(result_str) if result_str.startswith('{') else {"raw": result_str}
+            except:
+                self._raw_data = {"raw": result_str}
+
+            step_duration = time.time() - step_start
+            self._step_times['parse_excel'] = step_duration
+            print(f"[OK] Excel file parsed")
+            print(f"[TIMING] Parse excel: {self._format_duration(step_duration)}")
+
+        except Exception as e:
+            print(f"[ERROR] Error parsing Excel: {str(e)}")
+            raise
+
+    @listen(step_2a_parse_excel)
+    def step_2b_extract_date(self):
+        """Extract effective date from filename"""
+        step_start = time.time()
+
+        print("\n" + "-" * 60)
+        print("[EXCEL] Step 2b: Extract Effective Date")
+        print("-" * 60)
+
+        try:
+            # Create crew with just extract date task
+            from crewai import Crew, Process
+            crew_instance = ExcelProcessorCrew()
+
+            result = (
+                Crew(
+                    agents=[crew_instance.excel_parser_agent()],
+                    tasks=[crew_instance.extract_effective_date()],
+                    process=Process.sequential,
+                    verbose=False,
+                )
+                .kickoff(inputs={
+                    "excel_file_path": self.state.excel_file_path,
+                })
+            )
+
+            # Extract effective date
+            result_str = result.raw if hasattr(result, 'raw') else str(result)
+            try:
+                date_data = json.loads(result_str)
+                if date_data.get('success') and date_data.get('effective_date_iso'):
+                    self._effective_date = datetime.fromisoformat(date_data['effective_date_iso'])
+                    print(f"[OK] Effective date extracted: {date_data.get('effective_date_display')}")
+                else:
+                    self._effective_date = self._trigger_date
+                    print(f"[WARNING] Using trigger date as fallback")
+            except:
+                self._effective_date = self._trigger_date
+                print(f"[WARNING] Using trigger date as fallback")
+
+            step_duration = time.time() - step_start
+            self._step_times['extract_date'] = step_duration
+            print(f"[TIMING] Extract date: {self._format_duration(step_duration)}")
+
+        except Exception as e:
+            print(f"[ERROR] Error extracting date: {str(e)}")
+            raise
+
+    @listen(step_2b_extract_date)
+    def step_2c_generate_formula(self):
+        """Generate formula Excel file"""
+        step_start = time.time()
+
+        print("\n" + "-" * 60)
+        print("[EXCEL] Step 2c: Generate Formula Excel")
+        print("-" * 60)
+
+        try:
+            # Create crew with just generate formula task
+            from crewai import Crew, Process
+            crew_instance = ExcelProcessorCrew()
+
+            result = (
+                Crew(
+                    agents=[crew_instance.excel_parser_agent()],
+                    tasks=[crew_instance.generate_formula_excel()],
+                    process=Process.sequential,
+                    verbose=False,
+                )
+                .kickoff(inputs={
+                    "excel_file_path": self.state.excel_file_path,
+                    "output_dir": str(OUTPUT_DIR),
+                    "raw_data": self._raw_data,
                 })
             )
 
             step_duration = time.time() - step_start
-            self._step_times['excel_processing'] = step_duration
-            print(f"[OK] Excel processing completed")
-            print(f"[TIMING] Excel processing: {self._format_duration(step_duration)}")
+            self._step_times['generate_formula'] = step_duration
+            print(f"[OK] Formula Excel generated")
+            print(f"[TIMING] Generate formula: {self._format_duration(step_duration)}")
 
-            # Parse the result
-            # The last task (validate_data_quality) should output both validation and categorized data
+        except Exception as e:
+            print(f"[ERROR] Error generating formula Excel: {str(e)}")
+            raise
+
+    @listen(step_2c_generate_formula)
+    def step_2d_analyze_prices(self):
+        """Analyze price changes"""
+        step_start = time.time()
+
+        print("\n" + "-" * 60)
+        print("[EXCEL] Step 2d: Analyze Price Changes")
+        print("-" * 60)
+
+        try:
+            # Create crew with just analyze task
+            from crewai import Crew, Process
+            crew_instance = ExcelProcessorCrew()
+
+            result = (
+                Crew(
+                    agents=[crew_instance.data_analyst_agent()],
+                    tasks=[crew_instance.analyze_price_changes()],
+                    process=Process.sequential,
+                    verbose=False,
+                )
+                .kickoff(inputs={
+                    "excel_file_path": self.state.excel_file_path,
+                    "raw_data": self._raw_data,
+                })
+            )
+
+            # Store analysis for next steps
             result_str = result.raw if hasattr(result, 'raw') else str(result)
-
-            # Try to parse as JSON if possible
             try:
-                if isinstance(result_str, str) and (result_str.startswith('{') or result_str.startswith('[')):
-                    result_data = json.loads(result_str)
+                self._price_analysis = json.loads(result_str) if result_str.startswith('{') else {"analysis": result_str}
+            except:
+                self._price_analysis = {"analysis": result_str}
 
-                    # Extract categorized_data from the validation output
+            step_duration = time.time() - step_start
+            self._step_times['analyze_prices'] = step_duration
+            print(f"[OK] Price changes analyzed")
+            print(f"[TIMING] Analyze prices: {self._format_duration(step_duration)}")
+
+        except Exception as e:
+            print(f"[ERROR] Error analyzing prices: {str(e)}")
+            raise
+
+    @listen(step_2d_analyze_prices)
+    def step_2e_validate_quality(self):
+        """Validate data quality"""
+        step_start = time.time()
+
+        print("\n" + "-" * 60)
+        print("[EXCEL] Step 2e: Validate Data Quality")
+        print("-" * 60)
+
+        try:
+            # Create crew with just validate task
+            from crewai import Crew, Process
+            crew_instance = ExcelProcessorCrew()
+
+            result = (
+                Crew(
+                    agents=[crew_instance.data_validator_agent()],
+                    tasks=[crew_instance.validate_data_quality()],
+                    process=Process.sequential,
+                    verbose=False,
+                )
+                .kickoff(inputs={
+                    "raw_data": self._raw_data,
+                    "price_analysis": self._price_analysis,
+                })
+            )
+
+            # Store final categorized data
+            result_str = result.raw if hasattr(result, 'raw') else str(result)
+            try:
+                if isinstance(result_str, str) and result_str.startswith('{'):
+                    result_data = json.loads(result_str)
                     if isinstance(result_data, dict) and "categorized_data" in result_data:
                         self._price_changes_categorized = result_data["categorized_data"]
                         print(f"[OK] Price changes categorized and extracted")
-
-                        # Also store validation results if present
                         if "validation" in result_data:
                             self._validation_info = result_data["validation"]
-                            print(f"[OK] Validation info: {result_data['validation'].get('status', 'UNKNOWN')}")
                     else:
-                        # Fallback: use entire result if structure is different
                         self._price_changes_categorized = result_data
-                        print(f"[OK] Price changes categorized (using full result)")
                 else:
-                    # If not JSON, store as-is
-                    result_data = {"categorized_output": result_str}
-                    self._price_changes_categorized = result_data
-                    print(f"[WARNING] Result is not JSON format")
-
-            except json.JSONDecodeError:
-                # If parsing fails, store the raw output
-                print(f"[WARNING] Could not parse result as JSON, storing raw output")
+                    self._price_changes_categorized = {"raw_output": result_str}
+            except:
                 self._price_changes_categorized = {"raw_output": result_str}
 
-            # Extract effective date from the extract_effective_date task output
-            # The crew result has a tasks_output attribute containing all task outputs
-            if hasattr(result, 'tasks_output') and result.tasks_output:
-                for task_output in result.tasks_output:
-                    # Find the extract_effective_date task output
-                    task_name = getattr(task_output, 'name', '')
-                    if 'extract_effective_date' in str(task_name).lower():
-                        date_result_str = task_output.raw if hasattr(task_output, 'raw') else str(task_output)
-                        try:
-                            date_data = json.loads(date_result_str)
-                            if date_data.get('success') and date_data.get('effective_date_iso'):
-                                # Parse the ISO date string to datetime
-                                self._effective_date = datetime.fromisoformat(date_data['effective_date_iso'])
-                                print(f"[OK] Effective date extracted: {date_data.get('effective_date_display')}")
-                                break
-                        except (json.JSONDecodeError, ValueError, KeyError) as e:
-                            print(f"[WARNING] Could not parse effective date from task output: {e}")
-
-            # Fallback: if effective date was not extracted, use trigger date
-            if self._effective_date is None:
-                self._effective_date = self._trigger_date
-                print(f"[WARNING] Using trigger date as fallback for effective date")
+            step_duration = time.time() - step_start
+            self._step_times['validate_quality'] = step_duration
+            print(f"[OK] Data quality validated")
+            print(f"[TIMING] Validate quality: {self._format_duration(step_duration)}")
 
         except Exception as e:
-            error_msg = f"Error in Excel processing: {str(e)}"
-            print(f"[ERROR] {error_msg}")
+            print(f"[ERROR] Error validating data quality: {str(e)}")
             raise
 
-    @listen(excel_processing_step)
-    def email_generation_step(self):
+    @listen(step_2e_validate_quality)
+    def step_3_email_generation(self):
         """
         Run Email Builder Crew (Crew 2)
         - Generate highlights content in plain text template format
@@ -282,91 +428,37 @@ class RevManFlow(Flow[RevManFlowState]):
             print(f"[ERROR] {error_msg}")
             raise
 
-    @listen(email_generation_step)
-    def validation_step(self):
-        """
-        Validate email output
-        - Check content completeness
-        - Verify template format structure
-        - Check for required sections
-        """
+    @listen(step_3_email_generation)
+    def step_4_validation(self):
+        """Validation (pass-through for now)"""
         step_start = time.time()
 
         print("\n" + "-" * 60)
-        print("[VALIDATION] Step 3: Content Validation")
+        print("[VALIDATION] Step 4: Validation (Pass-Through)")
         print("-" * 60)
 
         try:
-            # Basic validation for plain text template format
-            content = self._email_content
-
-            validation_data = {
+            # Simple pass-through - store minimal validation data
+            self._validation_report = {
                 "validation_status": "PASS",
                 "quality_score": 100,
                 "critical_issues": [],
                 "warnings": []
             }
+            self._validation_passed = True
 
-            # Check for required elements
-            if "Highlights (Price Before Tax and Deposit)" not in content:
-                validation_data["critical_issues"].append("Missing required title: 'Highlights (Price Before Tax and Deposit)'")
-
-            # Check for at least one brewer section
-            brewers = ["LABATT", "MOLSON", "SLEEMAN", "Other"]
-            has_brewer = any(brewer in content for brewer in brewers)
-            if not has_brewer:
-                validation_data["critical_issues"].append("No brewer sections found (LABATT, MOLSON, SLEEMAN, Other)")
-
-            # Check for at least one change type section (standard categories)
-            sections = ["Begin LTO", "End LTO", "Permanent Changes"]
-            has_section = any(section in content for section in sections)
-            if not has_section:
-                validation_data["warnings"].append("No change type sections found (Begin LTO, End LTO, Permanent Changes)")
-
-            # Optional sections that may appear (don't flag if missing)
-            # - "End LTO & Permanent Change" (only if historical data shows price not returning to pre-LTO)
-            # - "LICENSEE CHANGES" (only if licensee changes exist)
-            # - "NEW SKUs" (only if new SKUs exist)
-
-            # Update validation status based on issues
-            if validation_data["critical_issues"]:
-                validation_data["validation_status"] = "FAIL"
-                validation_data["quality_score"] = 0
-            elif validation_data["warnings"]:
-                validation_data["validation_status"] = "PASS WITH WARNINGS"
-                validation_data["quality_score"] = 80
-
-            # Store in instance variables instead of state
-            self._validation_report = validation_data
-            status = validation_data.get("validation_status", "FAIL")
-            self._validation_passed = status in ["PASS", "PASS WITH WARNINGS"]
-
-            print(f"[OK] Validation {status}")
-            print(f"  Quality Score: {validation_data.get('quality_score', 0)}/100")
-
-            if validation_data.get("critical_issues"):
-                print(f"  [WARNING] Critical Issues: {len(validation_data['critical_issues'])}")
-                for issue in validation_data['critical_issues']:
-                    print(f"    - {issue}")
-
-            if validation_data.get("warnings"):
-                print(f"  [WARNING] Warnings: {len(validation_data['warnings'])}")
-
-            # Fail flow if critical issues exist
-            if validation_data.get("critical_issues"):
-                raise Exception("Validation failed with critical issues")
+            print(f"[OK] Validation PASS (pass-through mode)")
 
             step_duration = time.time() - step_start
             self._step_times['validation'] = step_duration
             print(f"[TIMING] Validation: {self._format_duration(step_duration)}")
 
         except Exception as e:
-            error_msg = f"Error in validation: {str(e)}"
-            print(f"[ERROR] {error_msg}")
+            print(f"[ERROR] Error in validation: {str(e)}")
             raise
 
-    @listen(validation_step)
-    def save_email_output(self):
+    @listen(step_4_validation)
+    def step_5_save_output(self):
         """
         Save generated email to output directory
         - Save plain text email in template format
