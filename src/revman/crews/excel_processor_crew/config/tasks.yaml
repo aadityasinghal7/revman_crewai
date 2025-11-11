@@ -188,6 +188,7 @@ analyze_price_changes:
 
     ───────────────────────────────────────────────────────────
 
+    <critical>
     RULE 5: RETAIL - END LTO (Type of Sale = "TBS – Retail Price" AND new price > 104% of old price)
     ───────────────────────────────────────────────────────────
     - For products where Type of Sale = "TBS – Retail Price"
@@ -196,11 +197,28 @@ analyze_price_changes:
     - Format: "Product PackSize +/-$X.XX to $YY.YY"
     - NO GROUPING by brewer at this stage
 
+    DO NOT SKIP END LTO PRODUCTS! If any products have price ratio > 104% (ratio > 1.04),
+    they MUST be included in the "End LTO" category. This is equally important as all other categories.
+    </critical>
+
     ================================================================================================
     IMPORTANT NOTES:
     ================================================================================================
+    <mandatory>
     - The percentage calculation (new_price / old_price) * 100 matches Column O in the formula Excel
-    - Column O can be used to assess the percentage required for Rules 3, 4, 5
+    - Column O contains pre-calculated Price Ratio % values - USE THIS COLUMN to determine categories for Rules 3, 4, and 5
+    - You MUST use the PriceCalculatorTool for EVERY product with Type of Sale = "TBS – Retail Price"
+    </mandatory>
+
+    <important>
+    PERCENTAGE CLARIFICATION:
+    - 104% means a ratio of 1.04 (new_price / old_price = 1.04), NOT a 4% increase
+    - Example: old_price=$10.00, new_price=$11.00 → ratio=1.10 → 110% → End LTO category
+    - Example: old_price=$50.00, new_price=$55.00 → ratio=1.10 → 110% → End LTO category
+    - Example: old_price=$100.00, new_price=$96.00 → ratio=0.96 → 96% → Permanent Changes category
+    - Example: old_price=$100.00, new_price=$95.00 → ratio=0.95 → 95% → Begin LTO category
+    </important>
+
     - GROUPING by brewer (LABATT, MOLSON, SLEEMAN, OTHER) applies ONLY to Rules 3, 4, 5
     - The grouping logic will be handled by the email_builder_crew, NOT here
     - DO NOT group licensee or new SKU products by brewer
@@ -246,7 +264,9 @@ analyze_price_changes:
       ]
     }}
 
-    CRITICAL REQUIREMENTS:
+    <critical>
+    CRITICAL REQUIREMENTS - OUTPUT VALIDATION:
+    </critical>
     - NO brewer grouping (LABATT, MOLSON, SLEEMAN, OTHER) in this output
     - Brewer grouping will be done by email_builder_crew
     - ALL 12 licensee products MUST appear in "LICENSEE CHANGES" list
@@ -254,6 +274,15 @@ analyze_price_changes:
     - Format: "Product PackSize +/-$Amount to $NewPrice"
     - NO explanatory text, NO business context
     - Output parseable JSON only
+
+    <critical>
+    ALL 5 CATEGORIES MUST BE PRESENT IN OUTPUT:
+    - ALL 5 category keys must exist in the JSON output: "LICENSEE CHANGES", "NEW SKUs", "Permanent Changes", "Begin LTO", "End LTO"
+    - If no products match a category, the array can be empty: []
+    - If products exist matching a category's criteria, that category's array MUST NOT be empty
+    - SPECIAL VALIDATION FOR END LTO: If ANY products have price ratio > 104% (new_price/old_price > 1.04),
+      the "End LTO" array MUST contain those products. An empty "End LTO" array when such products exist is a FAILURE.
+    </critical>
 
   agent: data_analyst_agent
   context:
