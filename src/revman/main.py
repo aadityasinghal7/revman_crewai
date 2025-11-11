@@ -6,14 +6,12 @@ Processes Excel price change reports and generates plain text email content in t
 
 import json
 import os
-import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from pydantic import BaseModel
 from crewai.flow import Flow, listen, start
-from crewai import Agent
 
 from revman.crews.excel_processor_crew import ExcelProcessorCrew
 from revman.crews.email_builder_crew import EmailBuilderCrew
@@ -41,12 +39,11 @@ class RevManFlow(Flow[RevManFlowState]):
     RevMan Price Change Email Flow
 
     Flow orchestrates:
-    1. Trigger - Input validation
+    1. Trigger - Input processing
     2a. Parse Excel file
     2b. Extract effective date
     2c. Generate formula Excel
     2d. Analyze price changes
-    2e. Validate data quality
     3. Email generation (Crew 2)
     4. Output saving
     """
@@ -65,9 +62,6 @@ class RevManFlow(Flow[RevManFlowState]):
         self._raw_data: Dict[str, Any] = {}
         self._price_analysis: Dict[str, Any] = {}
         self._price_changes_categorized: Dict[str, Any] = {}
-        self._validation_info: Dict[str, Any] = {}
-        self._validation_report: Dict[str, Any] = {}
-        self._validation_passed: bool = False
 
     @start()
     def trigger(self, crewai_trigger_payload: dict = None):
@@ -80,8 +74,7 @@ class RevManFlow(Flow[RevManFlowState]):
         # Auto-generate internal state
         self._trigger_date = datetime.now()
         self._email_recipients = os.getenv(
-            "REVMAN_EMAIL_RECIPIENTS",
-            "aaditya.singhal@anheuser-busch.com"
+            "REVMAN_EMAIL_RECIPIENTS"
         ).split(",")  # Support comma-separated list
 
         print("\n" + "=" * 60)
@@ -149,13 +142,6 @@ class RevManFlow(Flow[RevManFlowState]):
                     if isinstance(result_data, dict):
                         self._price_changes_categorized = result_data
 
-                        # DEBUG: Print the actual categorized data structure
-                        print("\n" + "="*60)
-                        print("[DEBUG] Raw result_data from analyze_price_changes:")
-                        print("="*60)
-                        print(json.dumps(result_data, indent=2, default=str))
-                        print("="*60 + "\n")
-
                         print(f"[OK] Price changes categorized and extracted")
 
                         # Validate we actually have data
@@ -169,26 +155,6 @@ class RevManFlow(Flow[RevManFlowState]):
                                 total_products += len(categories)
 
                         print(f"[OK] Total products categorized: {total_products}")
-
-                        # DEBUG: Show what's in each category
-                        print("\n" + "="*60)
-                        print("[DEBUG] Category breakdown:")
-                        print("="*60)
-                        for brewer, categories in self._price_changes_categorized.items():
-                            print(f"\n{brewer}:")
-                            if isinstance(categories, dict):
-                                for category, products in categories.items():
-                                    if isinstance(products, list):
-                                        print(f"  {category}: {len(products)} products")
-                                        if len(products) > 0:
-                                            print(f"    Sample: {products[0]}")
-                                    else:
-                                        print(f"  {category}: {products}")
-                            elif isinstance(categories, list):
-                                print(f"  {len(categories)} products")
-                                if len(categories) > 0:
-                                    print(f"    Sample: {categories[0]}")
-                        print("="*60 + "\n")
 
                         # Validate we have actual data
                         if total_products == 0:

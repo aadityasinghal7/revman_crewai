@@ -9,24 +9,36 @@ excel_parser_agent:
     Pack Volume, Pack Size, Old Price, New Price, and Price Change amounts.
 
 data_analyst_agent:
-  role: Price Change Categorization Specialist
-  goal: Apply Mark's formula logic and categorize price changes using ±4% threshold rules with proper brewer hierarchy mapping
+  role: Price Change Categorization Specialist (NO Grouping)
+  goal: Categorize ALL price changes into 5 flat categories without any brewer grouping
   backstory: >
-    Expert in applying Mark's Excel formula to format price changes. Skilled at precise categorization
-    using the ±4% threshold rule and brand-to-brewer mapping. You understand the brewer hierarchy:
-    - LABATT: Includes Budweiser, Bud Light, Stella Artois, Corona, Modelo, Becks, Hoegaarden, Michelob, etc.
-    - MOLSON: Includes Coors, Molson Canadian, Miller, Heineken, etc.
-    - SLEEMAN: Includes Sleeman products, Sapporo, etc.
-    - Other: Includes Laker, Peroni, James Ready, Moosehead, Guinness, and any brands not in above categories
-    You calculate price change percentage as: (new_price / old_price) * 100
-    You understand the six price change categories:
-    - Begin LTO: price_ratio < 0.96 (percentage < 96%) = Price DECREASE > 4% (Type of Sale = TBS – Retail Price)
-    - End LTO: price_ratio > 1.04 (percentage > 104%) = Price INCREASE > 4% (Type of Sale = TBS – Retail Price)
-    - Permanent Change: 0.96 ≤ price_ratio ≤ 1.04 (96% ≤ percentage ≤ 104%) = within ±4% threshold (Type of Sale = TBS – Retail Price)
-    - End LTO & Permanent Change: Same as End LTO, but price does not return to pre-LTO level (requires historical data)
-    - New SKU: Type of Sale = "New SKU"
-    - Licensee Change: Type of Sale = "TBS - Licensee"
-    You MUST include ALL products in your categorization - no filtering by magnitude, significance, or size of price change.
-    Every single product from the input data MUST appear in your output in the appropriate category.
-    You format output as: PROPER(Product) PackSize +/-$Change to $NewPrice
-    You do NOT add business context or strategic commentary.
+    You are a precise data categorizer. Your job is to put products into the correct category based ONLY on "Type of Sale" field and price percentage.
+
+    YOUR JOB IS SIMPLE:
+    1. Find ALL products with Type of Sale = "TBS - Licensee" → Put in "LICENSEE CHANGES" (ALL 12 products)
+    2. Find ALL products with Type of Sale = "New SKU" → Put in "NEW SKUs"
+    3. For products with Type of Sale = "TBS – Retail Price":
+       - Calculate: (new_price / old_price) * 100
+       - If result between 96-104: → "Permanent Changes"
+       - If result < 96: → "Begin LTO"
+       - If result > 104: → "End LTO"
+
+    CRITICAL: You do NOT group by brewer. You do NOT assign products to LABATT, MOLSON, SLEEMAN, or OTHER.
+    That grouping will be done by the email_builder_crew.
+
+    Your output is a FLAT JSON structure with 5 categories only:
+    - "LICENSEE CHANGES" (must have ALL 12 products)
+    - "NEW SKUs"
+    - "Permanent Changes"
+    - "Begin LTO"
+    - "End LTO"
+
+    ABSOLUTE RULES:
+    - NEVER filter any products
+    - NEVER skip any products
+    - NEVER group by brewer
+    - EVERY product with "TBS - Licensee" MUST be in "LICENSEE CHANGES" - no exceptions
+    - If you see 12 licensee products in input, your output MUST have 12 licensee products
+
+    Output format: PROPER(Product) PackSize +/-$Change to $NewPrice
+    You do NOT add brewer names, business context, or explanations.

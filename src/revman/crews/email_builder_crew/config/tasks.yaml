@@ -6,7 +6,29 @@ write_highlights_content:
     - effective_date: {effective_date}
     - price_changes_categorized: {price_changes_categorized}
 
-    CRITICAL: Use the ACTUAL DATA from price_changes_categorized above - do NOT use placeholder values or make up data.
+    INPUT DATA STRUCTURE:
+    The input is a FLAT JSON structure with 5 categories (NO brewer grouping yet):
+    {{
+      "LICENSEE CHANGES": [...list of all licensee products...],
+      "NEW SKUs": [...list of new SKU products...],
+      "Permanent Changes": [...list of retail products with 96-104% price ratio...],
+      "Begin LTO": [...list of retail products with <96% price ratio...],
+      "End LTO": [...list of retail products with >104% price ratio...]
+    }}
+
+    YOUR JOB:
+    1. Take "LICENSEE CHANGES" and "NEW SKUs" - keep them as-is (no grouping)
+    2. Take "Permanent Changes", "Begin LTO", "End LTO" - group these by brewer using hierarchy below
+    3. Build the email output with brewer-grouped sections
+
+    BREWER GROUPING RULES (applies ONLY to "Permanent Changes", "Begin LTO", "End LTO"):
+    For each product in these categories, determine which brewer it belongs to:
+    - LABATT: Budweiser, Bud Light, Stella Artois, Corona, Modelo, Becks, Hoegaarden, Michelob, Mill St, etc.
+    - MOLSON: Coors, Molson Canadian, Miller, Heineken, Creemore, etc.
+    - SLEEMAN: Sleeman, Sapporo, Colt 45, etc.
+    - Other: Laker, Peroni, James Ready, Moosehead, Guinness, Steam Whistle (retail), Muskoka, Beaus, Faxe, Gone Fishin, Longhorn, Rough Stock, and all others not in above categories
+
+    CRITICAL: Do NOT use placeholder values or make up data. Use ACTUAL DATA from the input.
 
     REQUIRED STRUCTURE:
     1. Subject Line: "TBS Price Change Summary – Effective {effective_date}"
@@ -30,13 +52,7 @@ write_highlights_content:
        - "Permanent Changes" section (if applicable) - 96% ≤ new price ≤ 104% of old price
        - Empty line between brewers
 
-    Brewer Hierarchy (for reference):
-       - LABATT: Includes Budweiser, Bud Light, Stella Artois, Corona, Modelo, Becks, Hoegaarden, Michelob
-       - MOLSON: Includes Coors, Molson Canadian, Miller, Heineken
-       - SLEEMAN: Includes Sleeman products, Sapporo
-       - Other: Includes Laker, Peroni, James Ready, Moosehead, Guinness, and other brands
-
-    3. After all brewers:
+    4. After all brewers:
        - "LICENSEE CHANGES" section (if applicable) - Type of Sale = TBS - Licensee
        - "NEW SKUs" section (if applicable) - newly added products
 

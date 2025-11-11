@@ -111,119 +111,147 @@ generate_formula_excel:
 
 analyze_price_changes:
   description: |
-    Analyze and categorize price change data for highlights email using the 6-category system.
+    Categorize ALL price change data into 5 categories WITHOUT any grouping by brewer.
+    Brewer grouping will be handled by the email_builder_crew.
 
     DATA SOURCE:
     - Use the parsed data from the parse_excel_file task (available via context)
     - DO NOT read the Excel file again - all data has already been parsed and is available
     - All product records with complete column data are available from the previous task
 
-    BREWER HIERARCHY AND BRAND MAPPING:
-    Map individual brands to their parent brewers using this hierarchy:
-    - LABATT: Includes Budweiser, Bud Light, Stella Artois, Corona, Modelo, Becks, Hoegaarden, Michelob, etc.
-    - MOLSON: Includes Coors, Molson Canadian, Miller, Heineken, etc.
-    - SLEEMAN: Includes Sleeman products, Sapporo, etc.
-    - Other: Includes Laker, Peroni, James Ready, Moosehead, Guinness, and any brands not in above categories
+    ================================================================================================
+    CATEGORIZATION RULES - PROCESS IN THIS EXACT ORDER:
+    ================================================================================================
 
-    CATEGORIZATION PROCESS:
+    RULE 1: LICENSEE PRODUCTS (Type of Sale = "TBS - Licensee")
+    ───────────────────────────────────────────────────────────
+    - BEFORE ANY GROUPING: Retrieve ALL rows where Type of Sale = "TBS - Licensee"
+    - NO GROUPING happens at this stage
+    - NO FILTERING of any kind
+    - Format: "Product PackSize +/-$X.XX to $YY.YY"
+    - Add to "LICENSEE CHANGES" category
 
-    FOR EACH PRODUCT, categorize in this order (first match wins):
+    CRITICAL: The following products MUST ALL appear in output:
+    1. HEINEKEN NV 24B (-$6.20 to $54.50)
+    2. HEINEKEN SILVER 24B (-$6.20 to $54.50)
+    3. HEADSTOCK IPA 24B (-$4.00 to $61.88)
+    4. WICKED AWESOME IPA 24B (-$4.00 to $61.88)
+    5. HEADSTOCK IPA 1 (+$0.25 to $3.30)
+    6. STEAM WHISTLE 24C (+$1.00 to $51.99)
+    7. BARNBURNER AMBER ALE 1 (+$2.22 to $153.50)
+    8. NAUGHTY NEIGHBOUR 24B (+$4.00 to $65.88)
+    9. NICKEL BROOK LAGER 24B (+$4.00 to $57.00)
+    10. ASAHI SUPER DRY 1 (+$4.99 to $123.00)
+    11. STEAM WHISTLE 1 (+$5.00 to $145.95)
+    12. DELIRIUM RED 1 (+$6.24 to $214.16)
 
-    1. LICENSEE CHANGES (FIRST PRIORITY):
-       - If Type of Sale = "TBS - Licensee" → Add to "LICENSEE CHANGES" category
-       - Format: "Product PackSize +/-$X.XX to $YY.YY"
-       - ALL licensee products go here, regardless of brewer
+    VALIDATION:
+    - Count products with Type of Sale = "TBS - Licensee" in input: MUST be 12
+    - Count products in your "LICENSEE CHANGES" output: MUST be 12
+    - If counts don't match, you FAILED - re-process until you get all 12
 
-       CRITICAL RULES FOR LICENSEE CHANGES:
-       - VALIDATION: EVERY single product where Type of Sale = "TBS - Licensee" MUST appear in the "LICENSEE CHANGES" output
-       - DO NOT deduplicate products based on product name, brewer, or pack size
-       - If a product exists as both "TBS - Retail Price" AND "TBS - Licensee", include BOTH versions in their respective categories
-       - Pack size (whether 1, 12, 24, etc.) is IRRELEVANT - include all licensee products regardless
-       - Brewer name is IRRELEVANT - include all licensee products regardless
-       - Price change percentage is IRRELEVANT - include all licensee products regardless
-       - The ONLY criterion is: Type of Sale = "TBS - Licensee"
-       - VERIFICATION: Count licensee products in the parsed input data. The "LICENSEE CHANGES" output MUST contain the same count.
+    ───────────────────────────────────────────────────────────
 
-       Examples of licensee products that MUST be included:
-       - HEINEKEN CANADA INC products (e.g., "Heineken Nv 24B", "Heineken Silver 24B")
-       - NICKEL BROOK BREWING COMPANY INC products (e.g., "Headstock Ipa 24B", "Naughty Neighbour 24B")
-       - STEAM WHISTLE BREWING INC products (e.g., "Steam Whistle 24C", "Steam Whistle 1")
-       - BEAU'S ALL NATURAL BREWING CO LTD products (e.g., "Barnburner Amber Ale 1")
-       - ASAHI BREWERIES LTD products (e.g., "Asahi Super Dry 1")
-       - Any other product where Type of Sale = "TBS - Licensee"
+    RULE 2: NEW SKU PRODUCTS (Type of Sale = "New SKU")
+    ───────────────────────────────────────────────────────────
+    - BEFORE ANY GROUPING: Retrieve ALL rows where Type of Sale = "New SKU"
+    - NO GROUPING happens at this stage
+    - NO FILTERING of any kind
+    - Format: "Product PackSize $YY.YY"
+    - Add to "NEW SKUs" category
 
-    2. NEW SKUs:
-       - If Type of Sale = "New SKU" → Add to "NEW SKUs" category
-       - Format: "Product PackSize $YY.YY"
+    VALIDATION:
+    - Count products with Type of Sale = "New SKU" in input
+    - Count products in your "NEW SKUs" output
+    - Counts MUST match exactly
 
-       CRITICAL RULES FOR NEW SKUs:
-       - VALIDATION: EVERY single product where Type of Sale = "New SKU" MUST appear in the "NEW SKUs" output
-       - DO NOT deduplicate products based on any criteria
-       - DO NOT filter based on brewer, pack size, or price
-       - New SKUs are ALWAYS categorized here regardless of brewer hierarchy or other attributes
-       - The ONLY criterion is: Type of Sale = "New SKU"
-       - VERIFICATION: Count New SKU products in the parsed input data. The "NEW SKUs" output MUST contain the same count.
+    ───────────────────────────────────────────────────────────
 
-    3. RETAIL PRODUCTS (Type of Sale = "TBS – Retail Price"):
-       - First, assign to parent brewer (LABATT, MOLSON, SLEEMAN, or Other) using hierarchy above
-       - Then categorize by price change using ±4% threshold:
-         * Calculate percentage: price_percentage = (new_price / old_price) * 100
-         * Calculate ratio: price_ratio = new_price / old_price
-         * If price_ratio < 0.96 (percentage < 96%): "Begin LTO" (Price DECREASE > 4%)
-         * If price_ratio > 1.04 (percentage > 104%): "End LTO" (Price INCREASE > 4%)
-           - OR "End LTO & Permanent Change" if price doesn't return to pre-LTO level (requires historical data)
-         * If 0.96 ≤ price_ratio ≤ 1.04 (96% ≤ percentage ≤ 104%): "Permanent Changes" (within ±4% threshold)
-       - Format: "Product PackSize +/-$X.XX to $YY.YY"
+    RULE 3: RETAIL - PERMANENT CHANGE (Type of Sale = "TBS – Retail Price" AND 96% ≤ new price ≤ 104% of old price)
+    ───────────────────────────────────────────────────────────
+    - For products where Type of Sale = "TBS – Retail Price"
+    - Calculate percentage as: (new_price / old_price) * 100
+      (This matches the Column O formula in the generated Excel file)
+    - If percentage is between 96 and 104 (inclusive): → "Permanent Changes" category
+    - Format: "Product PackSize +/-$X.XX to $YY.YY"
+    - NO GROUPING by brewer at this stage
 
-       CRITICAL FILTERING RULES FOR RETAIL PRODUCTS:
-       - Include EVERY product where Type of Sale = "TBS – Retail Price"
-       - DO NOT filter based on price change magnitude (include $0.01 changes and $20.00 changes alike)
-       - DO NOT exclude small changes or insignificant price movements
-       - DO NOT skip any products for any reason
-       - ALL products from LABATT, MOLSON, SLEEMAN, and Other MUST appear in output
-       - VERIFICATION: Count retail products in parsed input data. Output retail products MUST match this count.
+    ───────────────────────────────────────────────────────────
 
-    CRITICAL PROCESSING ORDER:
-    1. FIRST: Process ALL products where Type of Sale = "TBS - Licensee" into "LICENSEE CHANGES" category
-    2. SECOND: Process ALL products where Type of Sale = "New SKU" into "NEW SKUs" category
-    3. THIRD: Process retail products (Type of Sale = "TBS – Retail Price") into brewer categories
+    RULE 4: RETAIL - BEGIN LTO (Type of Sale = "TBS – Retail Price" AND new price < 96% of old price)
+    ───────────────────────────────────────────────────────────
+    - For products where Type of Sale = "TBS – Retail Price"
+    - Calculate percentage as: (new_price / old_price) * 100
+    - If percentage < 96: → "Begin LTO" category
+    - Format: "Product PackSize +/-$X.XX to $YY.YY"
+    - NO GROUPING by brewer at this stage
 
-    DO NOT assign licensee or New SKU products to brewer categories (LABATT, MOLSON, SLEEMAN, Other).
-    DO NOT skip any licensee or New SKU products for any reason.
+    ───────────────────────────────────────────────────────────
+
+    RULE 5: RETAIL - END LTO (Type of Sale = "TBS – Retail Price" AND new price > 104% of old price)
+    ───────────────────────────────────────────────────────────
+    - For products where Type of Sale = "TBS – Retail Price"
+    - Calculate percentage as: (new_price / old_price) * 100
+    - If percentage > 104: → "End LTO" category
+    - Format: "Product PackSize +/-$X.XX to $YY.YY"
+    - NO GROUPING by brewer at this stage
+
+    ================================================================================================
+    IMPORTANT NOTES:
+    ================================================================================================
+    - The percentage calculation (new_price / old_price) * 100 matches Column O in the formula Excel
+    - Column O can be used to assess the percentage required for Rules 3, 4, 5
+    - GROUPING by brewer (LABATT, MOLSON, SLEEMAN, OTHER) applies ONLY to Rules 3, 4, 5
+    - The grouping logic will be handled by the email_builder_crew, NOT here
+    - DO NOT group licensee or new SKU products by brewer
+    - DO NOT apply any filtering - include ALL products that match each rule
 
   expected_output: |
     IMPORTANT: Output MUST be valid JSON ONLY - no text before or after, no markdown formatting, no code blocks.
     Start with {{ and end with }}.
 
-    JSON structure:
+    FLAT JSON STRUCTURE (NO BREWER GROUPING):
     {{
-      "LABATT": {{
-        "Begin LTO": ["Budweiser 30C -$5.50 to $45.99", "MSO 24C -$4 to $44.99"],
-        "End LTO": ["Bud Light Lemon Lime 12C +$2 to $29.99"],
-        "End LTO & Permanent Change": ["Stella Artois 24B +$3.50 to $52.99"],
-        "Permanent Changes": ["Bud Light 28B -$0.50 to $43.49", "Corona Extra 12C +$0.25 to $24.99"]
-      }},
-      "MOLSON": {{
-        "Begin LTO": [],
-        "End LTO": [],
-        "Permanent Changes": []
-      }},
-      "SLEEMAN": {{
-        "Begin LTO": [],
-        "End LTO": [],
-        "Permanent Changes": []
-      }},
-      "Other": {{
-        "Begin LTO": ["Laker 24C -$2.00 to $28.99"],
-        "End LTO": [],
-        "Permanent Changes": ["Guinness 12B +$0.50 to $32.99"]
-      }},
-      "LICENSEE CHANGES": ["Craft Beer Brand 12C +$1.00 to $28.99"],
-      "NEW SKUs": ["New Product Launch 24C $49.99"]
+      "LICENSEE CHANGES": [
+        "Heineken Nv 24B -$6.20 to $54.50",
+        "Heineken Silver 24B -$6.20 to $54.50",
+        "Headstock Ipa 24B -$4.00 to $61.88",
+        "Wicked Awesome Ipa 24B -$4.00 to $61.88",
+        "Headstock Ipa 1 +$0.25 to $3.30",
+        "Steam Whistle 24C +$1.00 to $51.99",
+        "Barnburner Amber Ale 1 +$2.22 to $153.50",
+        "Naughty Neighbour 24B +$4.00 to $65.88",
+        "Nickel Brook Lager 24B +$4.00 to $57.00",
+        "Asahi Super Dry 1 +$4.99 to $123.00",
+        "Steam Whistle 1 +$5.00 to $145.95",
+        "Delirium Red 1 +$6.24 to $214.16"
+      ],
+      "NEW SKUs": [
+        "New Product Launch 24C $49.99"
+      ],
+      "Permanent Changes": [
+        "Bud Light 28B -$0.50 to $43.49",
+        "Corona Extra 12C +$0.25 to $24.99",
+        "Molson Canadian 24C +$0.50 to $38.99"
+      ],
+      "Begin LTO": [
+        "Budweiser 30C -$5.50 to $45.99",
+        "Coors Light 28B -$4.00 to $39.49",
+        "Miller High Life 24B -$4.00 to $35.99",
+        "Laker 24C -$2.00 to $28.99"
+      ],
+      "End LTO": [
+        "Bud Light Lemon Lime 12C +$2.00 to $29.99",
+        "Stella Artois 24B +$3.50 to $52.99"
+      ]
     }}
 
-    Format rules:
-    - Each product: "Product PackSize +/-$Amount to $NewPrice"
+    CRITICAL REQUIREMENTS:
+    - NO brewer grouping (LABATT, MOLSON, SLEEMAN, OTHER) in this output
+    - Brewer grouping will be done by email_builder_crew
+    - ALL 12 licensee products MUST appear in "LICENSEE CHANGES" list
+    - ALL products in each category (no filtering)
+    - Format: "Product PackSize +/-$Amount to $NewPrice"
     - NO explanatory text, NO business context
     - Output parseable JSON only
 

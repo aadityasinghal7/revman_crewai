@@ -6,7 +6,6 @@ from typing import Any, Dict, List
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 import openpyxl
-from openpyxl.utils import get_column_letter
 import re
 import os
 
@@ -290,6 +289,10 @@ class FormulaExcelGeneratorTool(BaseTool):
             # Calculate data start row (1-indexed for openpyxl)
             # skip_rows is the number of rows before headers, data typically starts 1 row after
             data_start_row = skip_rows + 2  # +1 for header row, +1 for first data row
+            header_row = skip_rows + 1  # The row with column headers
+
+            # Add header for column O (Price Ratio %)
+            ws[f'O{header_row}'] = 'Price Ratio %'
 
             # Find the last row with data
             max_row = ws.max_row
@@ -306,6 +309,12 @@ class FormulaExcelGeneratorTool(BaseTool):
 
                 # Add formula to the specified column
                 ws[f'{formula_column}{row_num}'] = formula
+
+                # Add percentage ratio formula to column O: =(J{row}/I{row})*100
+                # This calculates (new_price / old_price) * 100
+                percentage_formula = f'=(J{row_num}/I{row_num})*100'
+                ws[f'O{row_num}'] = percentage_formula
+
                 formula_count += 1
 
             # Save the workbook
