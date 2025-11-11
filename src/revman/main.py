@@ -74,7 +74,8 @@ class RevManFlow(Flow[RevManFlowState]):
         # Auto-generate internal state
         self._trigger_date = datetime.now()
         self._email_recipients = os.getenv(
-            "REVMAN_EMAIL_RECIPIENTS"
+            "REVMAN_EMAIL_RECIPIENTS",
+            "aaditya.singhal@anheuser-busch.com"
         ).split(",")  # Support comma-separated list
 
         print("\n" + "=" * 60)
