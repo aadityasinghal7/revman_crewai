@@ -5,6 +5,7 @@ write_highlights_content:
     INPUT DATA (provided via inputs):
     - effective_date: {effective_date}
     - price_changes_categorized: {price_changes_categorized}
+    - pricing_forecast_analysis: {pricing_forecast_analysis} (optional - may be empty)
 
     INPUT DATA STRUCTURE:
     The input is a FLAT JSON structure with 5 categories (NO brewer grouping yet):
@@ -16,10 +17,31 @@ write_highlights_content:
       "End LTO": [...list of retail products with >104% price ratio...]
     }}
 
+    PRICING FORECAST ANALYSIS DATA STRUCTURE (optional):
+    {{
+      "top_10_notable_changes": [
+        {{
+          "sku": "Product Name Details",
+          "brand": "Brand Name",
+          "pack_size": "24B",
+          "current_price": 45.99,
+          "forecasted_price": 48.50,
+          "price_change_dollars": 2.51,
+          "forecasted_change_pct": 5.46,
+          "z_score": 2.3,
+          "significance": "2.3σ"
+        }},
+        ...
+      ],
+      "total_anomalies_detected": 15,
+      "threshold_used": 1.5
+    }}
+
     YOUR JOB:
     1. Take "LICENSEE CHANGES" and "NEW SKUs" - keep them as-is (no grouping)
     2. Take "Permanent Changes", "Begin LTO", "End LTO" - group these by brewer using hierarchy below
     3. Build the email output with brewer-grouped sections
+    4. If pricing_forecast_analysis is provided and has "top_10_notable_changes", add a "PRICING TREND FORECAST" section at the end (after NEW SKUs, before closing)
 
     BREWER GROUPING RULES (applies ONLY to "Permanent Changes", "Begin LTO", "End LTO"):
     For each product in these categories, determine which brewer it belongs to:
@@ -55,6 +77,20 @@ write_highlights_content:
     4. After all brewers:
        - "LICENSEE CHANGES" section (if applicable) - Type of Sale = TBS - Licensee
        - "NEW SKUs" section (if applicable) - newly added products
+
+    5. Pricing Trend Forecast Section (OPTIONAL - only if pricing_forecast_analysis is provided):
+       - Add this section AFTER "NEW SKUs" and BEFORE the closing signature
+       - Title: "PRICING TREND FORECAST – Next Week"
+       - Subtitle: "Top 10 Notable Price Changes (Statistically Significant)"
+       - Note: "Based on historical trend analysis. Significance measured in standard deviations (σ) from historical patterns."
+       - Format as a simple table showing:
+         * Product and Pack Size
+         * Current price
+         * Forecast price
+         * Change ($ and %)
+         * Significance (σ)
+       - Use aligned columns for readability
+       - Only include if pricing_forecast_analysis contains "top_10_notable_changes"
 
     FORMAT EACH LINE:
     Product PackSize +/-$Amount to $FinalPrice
@@ -125,6 +161,17 @@ write_highlights_content:
     NEW SKUs
     Product lines...
 
+    PRICING TREND FORECAST – Next Week
+    Top 10 Notable Price Changes (Statistically Significant)
+
+    Based on historical trend analysis. Significance measured in standard deviations (σ) from historical patterns.
+
+    Product                          Pack    Current    Forecast   Change      Significance
+    -------------------------------- ------- ---------- ---------- ----------- ------------
+    Budweiser                        24B     $45.99     $48.50     +$2.51 (+5.5%)   2.3σ
+    Corona Extra                     12C     $28.99     $26.75     -$2.24 (-7.7%)   2.1σ
+    ...
+
     ---
 
     Best regards,
@@ -137,7 +184,8 @@ write_highlights_content:
     - Include pack size notation
     - Properly organized by brewer hierarchy
     - Each product line formatted as: Product PackSize +/-$Amount to $FinalPrice
-    - NO business context or commentary
+    - NO business context or commentary (except in pricing forecast section which needs context)
+    - If pricing forecast data is provided, include "PRICING TREND FORECAST" section after NEW SKUs
     - Include professional closing
     - Ready to send directly
 

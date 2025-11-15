@@ -146,13 +146,13 @@ RevManFlow (CrewAI Flow)
     │
     ├─ FlowState (Pydantic Model)
     │   ├─ Input: excel_file_path, trigger_date, recipients
-    │   └─ Output: email_content, email_subject, metadata
+    │   └─ Output: email_content, email_subject, metadata, pricing_forecast
     │
     ├─ [@start] trigger_flow()
     │   └─ Triggered by: Email with subject "TBS process"
     │   └─ Validates: Input file exists and is readable
     │
-    ├─ [@listen] excel_processing_crew()  ← CREW 1
+    ├─ [@listen(trigger)] excel_processing_crew()  ← CREW 1
     │   ├─ excel_parser_agent
     │   │   ├─ Task: parse_excel_file
     │   │   ├─ Task: extract_effective_date
@@ -160,12 +160,19 @@ RevManFlow (CrewAI Flow)
     │   └─ data_analyst_agent
     │       └─ Task: analyze_price_changes
     │
-    ├─ [@listen] email_generation_crew()  ← CREW 2
+    ├─ [@listen(trigger)] pricing_analysis_crew()  ← CREW 3 (NEW - Runs in Parallel)
+    │   └─ pricing_trend_analyst_agent
+    │       ├─ Task: analyze_historical_trends
+    │       ├─ Task: forecast_next_week_prices
+    │       └─ Task: identify_notable_changes
+    │
+    ├─ [@listen(analyze_pricing_trends)] email_generation_crew()  ← CREW 2
     │   └─ email_content_writer_agent
     │       └─ Task: write_highlights_content
+    │           └─ Inputs: price_changes_categorized + pricing_forecast_analysis
     │
     └─ [@listen] save_email_output()
-        └─ Saves: .txt, _metadata.json
+        └─ Saves: .txt, _metadata.json, pricing_forecast_YYYY-MM-DD.json
 ```
 
 ### Flow State & Data Flow
@@ -230,6 +237,43 @@ RevManFlow (CrewAI Flow)
 
 ---
 
+### Crew 3: Pricing Analysis Crew (NEW)
+
+**Purpose:** Analyze historical pricing trends, forecast next week's prices, and identify statistically significant price changes
+
+**Location:** `src/revman/crews/pricing_analysis_crew/`
+
+#### Components
+
+**Agents:** 1 agent (pricing_trend_analyst_agent)
+
+**Tasks:** 3 sequential tasks
+1. `analyze_historical_trends` - Calculate week-over-week % changes for all 108 SKUs from 2018-2025 data
+2. `forecast_next_week_prices` - Forecast next week's price using exponential weighted moving average of recent trends
+3. `identify_notable_changes` - Select top 10 SKUs with highest statistical significance (z-score > 1.5σ)
+
+**Tools:** 3 custom tools
+1. **HistoricalPriceAnalysisTool** - Reads historical Excel file, calculates WoW price changes, returns statistical summaries (mean, std dev, all changes) for each SKU
+2. **PriceForecastingTool** - Forecasts prices using exponential weighted moving average (more weight to recent 8 weeks), simple trend-based approach (no complex models)
+3. **AnomalyDetectionTool** - Calculates z-scores for each SKU, identifies changes > 1.5 standard deviations from historical mean, ranks by significance
+
+**Input:** `Historical_price_change_summary_report_vF.xlsx` (108 SKUs, 2018-Nov 2025, columns: SKU, BRAND, Pack Size, Pack Volume ml, Pack Type, Week, Price)
+
+**Key Output:** JSON with top 10 notable SKUs:
+- SKU details (brand, pack size, type)
+- Current price vs. forecasted price
+- Price change ($ and %)
+- Statistical significance (z-score and σ notation)
+- Historical mean and std deviation for context
+
+**Integration:** Runs in parallel with Excel Processor Crew (triggered from same starting point), results appended to email after NEW SKUs section
+
+**Implementation Details:** See `src/revman/crews/pricing_analysis_crew/config/agents.yaml` and `tasks.yaml`
+
+**Tools Implementation:** See `src/revman/tools/pricing_analysis_tools.py`
+
+---
+
 ## File Structure
 
 ```
@@ -238,15 +282,19 @@ revman/
 │   ├── main.py                          # Main Flow definition
 │   ├── crews/
 │   │   ├── excel_processor_crew/        # Crew 1: Parse & categorize
-│   │   └── email_builder_crew/          # Crew 2: Format email
+│   │   ├── email_builder_crew/          # Crew 2: Format email
+│   │   └── pricing_analysis_crew/       # Crew 3: Pricing forecast (NEW)
 │   └── tools/
-│       └── excel_tools.py
+│       ├── excel_tools.py               # 5 tools for Excel processing
+│       └── pricing_analysis_tools.py    # 3 tools for pricing analysis (NEW)
 ├── data/
-│   ├── input/                           # TBS Excel files
-│   ├── templates/                       # Output format.docx
-│   └── output/                          # Generated .txt, _metadata.json
+│   ├── input/                           # TBS Excel files + Historical price data
+│   │   ├── TBS Price Change Summary Report - October 13th'25.xlsx
+│   │   └── Historical_price_change_summary_report_vF.xlsx (NEW)
+│   ├── templates/                       # Output format.docx, Email workflow_price changes.docx
+│   └── output/                          # Generated .txt, _metadata.json, pricing_forecast_*.json
 ├── .env                                 # Environment config
-└── pyproject.toml                       # Dependencies
+└── pyproject.toml                       # Dependencies (includes numpy, pandas, openpyxl)
 ```
 
 **Path Constants:** Defined in `main.py` using `PROJECT_ROOT`, `DATA_DIR`, `INPUT_DIR`, `OUTPUT_DIR`, `TEMPLATE_DIR` with environment variable overrides
@@ -288,11 +336,13 @@ crewai run  # From project root: revman/
 
 The flow saves three files to `data/output/`:
 
-**1. Email Content (.txt)** - Plain text email ready to send (e.g., `price_change_email_2025-11-07.txt`)
+**1. Email Content (.txt)** - Plain text email ready to send (e.g., `price_change_email_2025-11-14.txt`)
 
 **2. Formula Excel File (.xlsx)** - Copy of input Excel with formulas in Column N (formatted text) and Column O (percentage ratio)
 
-**3. Metadata (.json)** - Email metadata including subject, dates, input file path, and recipients
+**3. Metadata (.json)** - Email metadata including subject, dates, input file path, recipients, and pricing forecast availability flag
+
+**4. Pricing Forecast (.json)** (NEW) - Top 10 SKUs with notable price changes including forecasts, z-scores, and significance levels (e.g., `pricing_forecast_2025-11-14.json`)
 
 ### Sample Output Structure
 
@@ -322,6 +372,17 @@ LICENSEE CHANGES
 NEW SKUs
   [New SKU products]
 
+PRICING TREND FORECAST – Next Week (NEW)
+Top 10 Notable Price Changes (Statistically Significant)
+
+Based on historical trend analysis. Significance measured in standard deviations (σ) from historical patterns.
+
+Product                          Pack    Current    Forecast   Change          Significance
+-------------------------------- ------- ---------- ---------- --------------- ------------
+Budweiser                        24B     $45.99     $48.50     +$2.51 (+5.5%)  2.3σ
+Corona Extra                     12C     $28.99     $26.75     -$2.24 (-7.7%)  2.1σ
+[... 8 more SKUs ...]
+
 Best regards,
 [Signature]
 ```
@@ -345,10 +406,14 @@ Best regards,
 - [x] Flow architecture designed and implemented
 - [x] Excel Processor Crew with 2 agents (excel_parser_agent, data_analyst_agent)
 - [x] Email Builder Crew with 1 agent
+- [x] Pricing Analysis Crew with 1 agent (NEW - November 2025)
 - [x] Formula logic replicated in data_analyst_agent
-- [x] Plain text email generation
-- [x] File output to data/output/
+- [x] Plain text email generation with pricing forecast section (NEW)
+- [x] Historical pricing trend analysis (NEW)
+- [x] Statistical forecasting with anomaly detection (NEW)
+- [x] File output to data/output/ (including pricing_forecast_*.json)
 - [x] Manual trigger via `crewai run`
+- [x] Parallel crew execution (Excel + Pricing Analysis)
 
 ### 🚧 In Progress
 
@@ -365,16 +430,19 @@ Best regards,
 - [ ] Recipient configuration
 
 **Phase 3: Advanced Features**
-- [ ] Historical comparison (current vs previous week)
-- [ ] Alert system for unusual price changes
+- [x] Historical pricing trend analysis with forecasting (✅ COMPLETED - November 2025)
+- [x] Statistical anomaly detection for price changes (✅ COMPLETED - November 2025)
+- [ ] Historical comparison (current week vs previous week price changes)
+- [ ] Alert system for unusual price changes (threshold-based notifications)
 - [ ] Multiple output formats (HTML email option)
 - [ ] Approval workflow before sending
 
 **Phase 4: Analytics & Monitoring**
 - [ ] Dashboard for monitoring flow executions
-- [ ] Price change trend analysis
+- [ ] Extended price change trend analysis (multi-week patterns, seasonality)
 - [ ] Performance metrics tracking
 - [ ] Audit logging
+- [ ] Machine learning models for improved forecasting accuracy
 
 ---
 
@@ -382,9 +450,11 @@ Best regards,
 
 1. **AI Agents replicate Excel formula logic** - More flexible than direct formula execution, easier to maintain and extend
 2. **Plain text email output** - Matches current workflow, simpler validation
-3. **Sequential crew execution** - Clear dependencies, easier debugging
-4. **Minimal validation for POC** - Focus on core functionality, enhance later
-5. **File-based output** - Safe for POC, human review before sending, provides audit trail
+3. **Parallel crew execution for pricing analysis** - Excel processing and pricing forecast run simultaneously for efficiency, email generation waits for both
+4. **Statistical rigor for forecasting** - Standard deviation-based anomaly detection ensures only truly notable changes are flagged, avoids false alerts
+5. **Simple forecasting approach** - Exponential weighted moving average (no ML) keeps logic transparent and explainable for business users
+6. **Minimal validation for POC** - Focus on core functionality, enhance later
+7. **File-based output** - Safe for POC, human review before sending, provides audit trail (including pricing forecast JSON for reference)
 
 ---
 
@@ -407,6 +477,6 @@ Best regards,
 
 ---
 
-**Plan Version:** 2.0
-**Date:** November 7, 2025
-**Status:** Active - POC Phase Complete
+**Plan Version:** 3.0
+**Date:** November 14, 2025
+**Status:** Active - POC Phase Complete + Pricing Analysis Feature Added
