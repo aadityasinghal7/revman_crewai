@@ -151,7 +151,7 @@
       "significance": "0.5\u03c3"
     }
   ],
-  "total_anomalies_detected": 13,
-  "threshold_used": 0.5,
-  "analysis_date": "2025-11-14 23:16:26"
+  "total_anomalies_detected": 99,
+  "threshold_used": 1.5,
+  "analysis_date": "2025-11-16 13:00:25"
 }

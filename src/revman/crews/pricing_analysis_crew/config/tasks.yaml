@@ -76,9 +76,9 @@ identify_notable_changes:
     1. Use the AnomalyDetectionTool - it will automatically read from: data/output/price_forecasts.json
     2. For each SKU, the tool calculates the z-score: how many standard deviations the forecasted change
        is from the historical mean change
-    3. Use a threshold of 1.5 standard deviations to identify notable changes
+    3. The tool calculates z-scores for ALL SKUs and always returns exactly 10 results
     4. The tool ranks all SKUs by their z-score (statistical significance)
-    5. The tool selects the top 10 SKUs with highest z-scores
+    5. The tool selects the top 10 SKUs with highest z-scores regardless of threshold value
     6. The tool includes both price increase and decrease anomalies
 
     Focus on identifying changes that are UNEXPECTED based on historical patterns, not just
@@ -86,7 +86,7 @@ identify_notable_changes:
     may be more significant than a volatile SKU with a large change.
 
   expected_output: |
-    A JSON structure with the top 10 notable SKUs, ranked by statistical significance:
+    A JSON structure with exactly 10 SKUs, ranked by statistical significance:
 
     For each SKU, include:
     - SKU details (brand, pack size, volume, type)
@@ -97,8 +97,8 @@ identify_notable_changes:
     - Historical mean and standard deviation for context
 
     Also include:
-    - Total number of anomalies detected (above threshold)
-    - Threshold used for detection
+    - Total number of SKUs analyzed (should always be 10 in the top list)
+    - Threshold used (deprecated parameter, no longer affects results)
     - Analysis timestamp
 
     This output will be formatted into a table and appended to the price change email.

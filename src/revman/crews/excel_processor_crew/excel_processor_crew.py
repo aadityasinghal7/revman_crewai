@@ -1,7 +1,7 @@
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
-from revman.tools import ExcelReaderTool, DataCleanerTool, PriceCalculatorTool, FormulaExcelGeneratorTool, DateExtractorTool
+from revman.tools import ExcelReaderTool, DataCleanerTool, PriceCalculatorTool, FormulaExcelGeneratorTool, DateExtractorTool, PriceCategorizationTool
 
 
 @CrewBase
@@ -25,7 +25,7 @@ class ExcelProcessorCrew:
         return Agent(
             config=self.agents_config["data_analyst_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            tools=[PriceCalculatorTool()],
+            tools=[PriceCalculatorTool(), PriceCategorizationTool()],
             verbose=True,  # Enabled for debugging - shows agent reasoning
         )
 

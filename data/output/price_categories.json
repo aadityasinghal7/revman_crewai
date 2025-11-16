@@ -1,0 +1,1465 @@
+{
+  "licensee_changes": [
+    {
+      "product": "HEINEKEN NV",
+      "pack_size": "24",
+      "old_price": 60.7,
+      "new_price": 54.5,
+      "price_change": -6.2
+    },
+    {
+      "product": "HEINEKEN SILVER",
+      "pack_size": "24",
+      "old_price": 60.7,
+      "new_price": 54.5,
+      "price_change": -6.2
+    },
+    {
+      "product": "HEADSTOCK IPA",
+      "pack_size": "24",
+      "old_price": 65.88,
+      "new_price": 61.88,
+      "price_change": -4.0
+    },
+    {
+      "product": "WICKED AWESOME IPA",
+      "pack_size": "24",
+      "old_price": 65.88,
+      "new_price": 61.88,
+      "price_change": -4.0
+    },
+    {
+      "product": "HEADSTOCK IPA",
+      "pack_size": "1",
+      "old_price": 3.05,
+      "new_price": 3.3,
+      "price_change": 0.25
+    },
+    {
+      "product": "STEAM WHISTLE",
+      "pack_size": "24",
+      "old_price": 50.99,
+      "new_price": 51.99,
+      "price_change": 1.0
+    },
+    {
+      "product": "BARNBURNER AMBER ALE",
+      "pack_size": "1",
+      "old_price": 151.28,
+      "new_price": 153.5,
+      "price_change": 2.22
+    },
+    {
+      "product": "NAUGHTY NEIGHBOUR",
+      "pack_size": "24",
+      "old_price": 61.88,
+      "new_price": 65.88,
+      "price_change": 4.0
+    },
+    {
+      "product": "NICKEL BROOK LAGER",
+      "pack_size": "24",
+      "old_price": 53.0,
+      "new_price": 57.0,
+      "price_change": 4.0
+    },
+    {
+      "product": "ASAHI SUPER DRY",
+      "pack_size": "1",
+      "old_price": 118.01,
+      "new_price": 123.0,
+      "price_change": 4.99
+    },
+    {
+      "product": "STEAM WHISTLE",
+      "pack_size": "1",
+      "old_price": 140.95,
+      "new_price": 145.95,
+      "price_change": 5.0
+    },
+    {
+      "product": "DELIRIUM RED",
+      "pack_size": "1",
+      "old_price": 207.92,
+      "new_price": 214.16,
+      "price_change": 6.24
+    }
+  ],
+  "new_skus": [],
+  "permanent_changes": [
+    {
+      "product": "MOLSON CANADIAN",
+      "pack_size": "24",
+      "old_price": 52.99,
+      "new_price": 51.89,
+      "price_change": -1.1,
+      "price_ratio_pct": 97.92
+    },
+    {
+      "product": "OLD MILWAUKEE ICE",
+      "pack_size": "24",
+      "old_price": 44.99,
+      "new_price": 43.96,
+      "price_change": -1.03,
+      "price_ratio_pct": 97.71
+    },
+    {
+      "product": "BUD LIGHT",
+      "pack_size": "28",
+      "old_price": 43.99,
+      "new_price": 43.49,
+      "price_change": -0.5,
+      "price_ratio_pct": 98.86
+    },
+    {
+      "product": "BUDWEISER",
+      "pack_size": "28",
+      "old_price": 43.99,
+      "new_price": 43.49,
+      "price_change": -0.5,
+      "price_ratio_pct": 98.86
+    },
+    {
+      "product": "CORONA",
+      "pack_size": "24",
+      "old_price": 50.49,
+      "new_price": 49.99,
+      "price_change": -0.5,
+      "price_ratio_pct": 99.01
+    },
+    {
+      "product": "CRACKED CANOE",
+      "pack_size": "12",
+      "old_price": 28.49,
+      "new_price": 27.99,
+      "price_change": -0.5,
+      "price_ratio_pct": 98.24
+    },
+    {
+      "product": "MOOSEHEAD LAGER",
+      "pack_size": "12",
+      "old_price": 28.49,
+      "new_price": 27.99,
+      "price_change": -0.5,
+      "price_ratio_pct": 98.24
+    },
+    {
+      "product": "BUD LIGHT",
+      "pack_size": "12",
+      "old_price": 24.29,
+      "new_price": 23.99,
+      "price_change": -0.3,
+      "price_ratio_pct": 98.76
+    },
+    {
+      "product": "BUDWEISER",
+      "pack_size": "12",
+      "old_price": 24.29,
+      "new_price": 23.99,
+      "price_change": -0.3,
+      "price_ratio_pct": 98.76
+    },
+    {
+      "product": "STELLA ARTOIS",
+      "pack_size": "12",
+      "old_price": 28.49,
+      "new_price": 28.19,
+      "price_change": -0.3,
+      "price_ratio_pct": 98.95
+    },
+    {
+      "product": "ALPINE LAGER",
+      "pack_size": "6",
+      "old_price": 15.19,
+      "new_price": 14.99,
+      "price_change": -0.2,
+      "price_ratio_pct": 98.68
+    },
+    {
+      "product": "CRACKED CANOE",
+      "pack_size": "6",
+      "old_price": 15.19,
+      "new_price": 14.99,
+      "price_change": -0.2,
+      "price_ratio_pct": 98.68
+    },
+    {
+      "product": "MOOSEHEAD LAGER",
+      "pack_size": "6",
+      "old_price": 15.19,
+      "new_price": 14.99,
+      "price_change": -0.2,
+      "price_ratio_pct": 98.68
+    },
+    {
+      "product": "MOOSEHEAD RADLER",
+      "pack_size": "1",
+      "old_price": 3.05,
+      "new_price": 2.99,
+      "price_change": -0.06,
+      "price_ratio_pct": 98.03
+    },
+    {
+      "product": "MUNICH GOLD LAGER",
+      "pack_size": "1",
+      "old_price": 2.39,
+      "new_price": 2.43,
+      "price_change": 0.04,
+      "price_ratio_pct": 101.67
+    },
+    {
+      "product": "LONGHORN LAGER",
+      "pack_size": "1",
+      "old_price": 2.79,
+      "new_price": 2.89,
+      "price_change": 0.1,
+      "price_ratio_pct": 103.58
+    },
+    {
+      "product": "MOOSEHEAD LIGHT",
+      "pack_size": "1",
+      "old_price": 2.59,
+      "new_price": 2.69,
+      "price_change": 0.1,
+      "price_ratio_pct": 103.86
+    },
+    {
+      "product": "JAMES READY 5.5",
+      "pack_size": "15",
+      "old_price": 25.99,
+      "new_price": 26.49,
+      "price_change": 0.5,
+      "price_ratio_pct": 101.92
+    },
+    {
+      "product": "JAMES READY 6.0",
+      "pack_size": "15",
+      "old_price": 25.99,
+      "new_price": 26.49,
+      "price_change": 0.5,
+      "price_ratio_pct": 101.92
+    },
+    {
+      "product": "STEAM WHISTLE",
+      "pack_size": "12",
+      "old_price": 27.99,
+      "new_price": 28.49,
+      "price_change": 0.5,
+      "price_ratio_pct": 101.79
+    },
+    {
+      "product": "BEAU'S LUG TREAD",
+      "pack_size": "6",
+      "old_price": 17.59,
+      "new_price": 18.29,
+      "price_change": 0.7,
+      "price_ratio_pct": 103.98
+    },
+    {
+      "product": "STEAM WHISTLE",
+      "pack_size": "6",
+      "old_price": 17.59,
+      "new_price": 18.29,
+      "price_change": 0.7,
+      "price_ratio_pct": 103.98
+    },
+    {
+      "product": "CZECHVAR",
+      "pack_size": "24",
+      "old_price": 53.58,
+      "new_price": 54.47,
+      "price_change": 0.89,
+      "price_ratio_pct": 101.66
+    },
+    {
+      "product": "JAMES READY 5.5",
+      "pack_size": "30",
+      "old_price": 43.49,
+      "new_price": 44.49,
+      "price_change": 1.0,
+      "price_ratio_pct": 102.3
+    },
+    {
+      "product": "PBR LIGHT",
+      "pack_size": "24",
+      "old_price": 43.96,
+      "new_price": 44.99,
+      "price_change": 1.03,
+      "price_ratio_pct": 102.34
+    },
+    {
+      "product": "COORS LIGHT",
+      "pack_size": "24",
+      "old_price": 51.89,
+      "new_price": 52.99,
+      "price_change": 1.1,
+      "price_ratio_pct": 102.12
+    },
+    {
+      "product": "MOOSEHEAD LAGER",
+      "pack_size": "60",
+      "old_price": 95.99,
+      "new_price": 97.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 102.08
+    },
+    {
+      "product": "BARNBURNER AMBER ALE",
+      "pack_size": "1",
+      "old_price": 151.28,
+      "new_price": 153.5,
+      "price_change": 2.22,
+      "price_ratio_pct": 101.47
+    },
+    {
+      "product": "STEAM WHISTLE",
+      "pack_size": "1",
+      "old_price": 140.95,
+      "new_price": 145.95,
+      "price_change": 5.0,
+      "price_ratio_pct": 103.55
+    },
+    {
+      "product": "BENEDIKTINER WEISS",
+      "pack_size": "24",
+      "old_price": 0.0,
+      "new_price": 59.82,
+      "price_change": 59.82,
+      "price_ratio_pct": 0,
+      "note": "Zero old price - categorized as permanent change"
+    }
+  ],
+  "begin_lto": [
+    {
+      "product": "STEAM WHISTLE",
+      "pack_size": "48",
+      "old_price": 95.99,
+      "new_price": 85.99,
+      "price_change": -10.0,
+      "price_ratio_pct": 89.58
+    },
+    {
+      "product": "CREST SUPER",
+      "pack_size": "24",
+      "old_price": 83.67,
+      "new_price": 74.82,
+      "price_change": -8.85,
+      "price_ratio_pct": 89.42
+    },
+    {
+      "product": "COLT 45",
+      "pack_size": "24",
+      "old_price": 86.02,
+      "new_price": 77.95,
+      "price_change": -8.07,
+      "price_ratio_pct": 90.62
+    },
+    {
+      "product": "BEAUS LUG LITE LAGER",
+      "pack_size": "48",
+      "old_price": 79.99,
+      "new_price": 71.99,
+      "price_change": -8.0,
+      "price_ratio_pct": 90.0
+    },
+    {
+      "product": "MUSKOKA TREAD LIGHT",
+      "pack_size": "48",
+      "old_price": 86.99,
+      "new_price": 78.99,
+      "price_change": -8.0,
+      "price_ratio_pct": 90.8
+    },
+    {
+      "product": "JAMES READY 5.5",
+      "pack_size": "60",
+      "old_price": 90.99,
+      "new_price": 84.99,
+      "price_change": -6.0,
+      "price_ratio_pct": 93.41
+    },
+    {
+      "product": "BUDWEISER",
+      "pack_size": "30",
+      "old_price": 51.49,
+      "new_price": 45.99,
+      "price_change": -5.5,
+      "price_ratio_pct": 89.32
+    },
+    {
+      "product": "HEINEKEN SILVER",
+      "pack_size": "24",
+      "old_price": 49.99,
+      "new_price": 44.99,
+      "price_change": -5.0,
+      "price_ratio_pct": 90.0
+    },
+    {
+      "product": "CREEMORE LAGER",
+      "pack_size": "24",
+      "old_price": 47.99,
+      "new_price": 42.99,
+      "price_change": -5.0,
+      "price_ratio_pct": 89.58
+    },
+    {
+      "product": "FAXE 10 EXTRA",
+      "pack_size": "24",
+      "old_price": 85.76,
+      "new_price": 80.76,
+      "price_change": -5.0,
+      "price_ratio_pct": 94.17
+    },
+    {
+      "product": "FAXE PREMIUM LAGER",
+      "pack_size": "24",
+      "old_price": 50.35,
+      "new_price": 45.35,
+      "price_change": -5.0,
+      "price_ratio_pct": 90.07
+    },
+    {
+      "product": "SLEEMAN CLEAR 2.0",
+      "pack_size": "30",
+      "old_price": 49.99,
+      "new_price": 44.99,
+      "price_change": -5.0,
+      "price_ratio_pct": 90.0
+    },
+    {
+      "product": "COORS ORIGINAL",
+      "pack_size": "30",
+      "old_price": 53.49,
+      "new_price": 48.99,
+      "price_change": -4.5,
+      "price_ratio_pct": 91.59
+    },
+    {
+      "product": "BEAUS LUG LITE LAGER",
+      "pack_size": "24",
+      "old_price": 42.99,
+      "new_price": 38.99,
+      "price_change": -4.0,
+      "price_ratio_pct": 90.7
+    },
+    {
+      "product": "GONE FISHIN LIGHT",
+      "pack_size": "12",
+      "old_price": 30.99,
+      "new_price": 26.99,
+      "price_change": -4.0,
+      "price_ratio_pct": 87.09
+    },
+    {
+      "product": "LONGHORN LAGER",
+      "pack_size": "12",
+      "old_price": 31.99,
+      "new_price": 27.99,
+      "price_change": -4.0,
+      "price_ratio_pct": 87.5
+    },
+    {
+      "product": "ROUGH STOCK IPA",
+      "pack_size": "12",
+      "old_price": 34.99,
+      "new_price": 30.99,
+      "price_change": -4.0,
+      "price_ratio_pct": 88.57
+    },
+    {
+      "product": "MILL ST ORGANIC LAG",
+      "pack_size": "24",
+      "old_price": 48.99,
+      "new_price": 44.99,
+      "price_change": -4.0,
+      "price_ratio_pct": 91.84
+    },
+    {
+      "product": "COORS LIGHT",
+      "pack_size": "28",
+      "old_price": 43.49,
+      "new_price": 39.49,
+      "price_change": -4.0,
+      "price_ratio_pct": 90.8
+    },
+    {
+      "product": "MILLER HIGH LIFE",
+      "pack_size": "24",
+      "old_price": 39.99,
+      "new_price": 35.99,
+      "price_change": -4.0,
+      "price_ratio_pct": 90.0
+    },
+    {
+      "product": "MILLER LITE",
+      "pack_size": "24",
+      "old_price": 42.99,
+      "new_price": 38.99,
+      "price_change": -4.0,
+      "price_ratio_pct": 90.7
+    },
+    {
+      "product": "MUSKOKA DETOUR",
+      "pack_size": "24",
+      "old_price": 51.49,
+      "new_price": 47.49,
+      "price_change": -4.0,
+      "price_ratio_pct": 92.23
+    },
+    {
+      "product": "HEADSTOCK IPA",
+      "pack_size": "24",
+      "old_price": 65.88,
+      "new_price": 61.88,
+      "price_change": -4.0,
+      "price_ratio_pct": 93.93
+    },
+    {
+      "product": "WICKED AWESOME IPA",
+      "pack_size": "24",
+      "old_price": 65.88,
+      "new_price": 61.88,
+      "price_change": -4.0,
+      "price_ratio_pct": 93.93
+    },
+    {
+      "product": "STEAM WHISTLE",
+      "pack_size": "24",
+      "old_price": 52.49,
+      "new_price": 48.49,
+      "price_change": -4.0,
+      "price_ratio_pct": 92.38
+    },
+    {
+      "product": "HELLES LAGER",
+      "pack_size": "24",
+      "old_price": 62.99,
+      "new_price": 58.99,
+      "price_change": -4.0,
+      "price_ratio_pct": 93.65
+    },
+    {
+      "product": "COLT 45",
+      "pack_size": "12",
+      "old_price": 42.61,
+      "new_price": 38.97,
+      "price_change": -3.64,
+      "price_ratio_pct": 91.46
+    },
+    {
+      "product": "MODELO ESPECIAL IMPT",
+      "pack_size": "24",
+      "old_price": 53.99,
+      "new_price": 50.99,
+      "price_change": -3.0,
+      "price_ratio_pct": 94.44
+    },
+    {
+      "product": "BUSCH LAGER",
+      "pack_size": "30",
+      "old_price": 47.99,
+      "new_price": 44.99,
+      "price_change": -3.0,
+      "price_ratio_pct": 93.75
+    },
+    {
+      "product": "KEITHS",
+      "pack_size": "28",
+      "old_price": 45.99,
+      "new_price": 42.99,
+      "price_change": -3.0,
+      "price_ratio_pct": 93.48
+    },
+    {
+      "product": "MICHELOB ULTRA",
+      "pack_size": "30",
+      "old_price": 52.49,
+      "new_price": 49.49,
+      "price_change": -3.0,
+      "price_ratio_pct": 94.28
+    },
+    {
+      "product": "MOLSON CANADIAN",
+      "pack_size": "30",
+      "old_price": 50.99,
+      "new_price": 47.99,
+      "price_change": -3.0,
+      "price_ratio_pct": 94.12
+    },
+    {
+      "product": "MOOSEHEAD LAGER",
+      "pack_size": "30",
+      "old_price": 49.99,
+      "new_price": 46.99,
+      "price_change": -3.0,
+      "price_ratio_pct": 94.0
+    },
+    {
+      "product": "SLEEMAN ORIGINAL LGR",
+      "pack_size": "24",
+      "old_price": 40.99,
+      "new_price": 37.99,
+      "price_change": -3.0,
+      "price_ratio_pct": 92.68
+    },
+    {
+      "product": "BEAUS LUG LITE LAGER",
+      "pack_size": "12",
+      "old_price": 24.49,
+      "new_price": 22.49,
+      "price_change": -2.0,
+      "price_ratio_pct": 91.83
+    },
+    {
+      "product": "RED BARON LIGHT",
+      "pack_size": "24",
+      "old_price": 35.04,
+      "new_price": 33.04,
+      "price_change": -2.0,
+      "price_ratio_pct": 94.29
+    },
+    {
+      "product": "BUD LIGHT",
+      "pack_size": "12",
+      "old_price": 27.99,
+      "new_price": 25.99,
+      "price_change": -2.0,
+      "price_ratio_pct": 92.85
+    },
+    {
+      "product": "STELLA ARTOIS",
+      "pack_size": "12",
+      "old_price": 34.49,
+      "new_price": 32.49,
+      "price_change": -2.0,
+      "price_ratio_pct": 94.2
+    },
+    {
+      "product": "ARIZONA H&H MIXER",
+      "pack_size": "12",
+      "old_price": 26.99,
+      "new_price": 24.99,
+      "price_change": -2.0,
+      "price_ratio_pct": 92.59
+    },
+    {
+      "product": "COORS SELT SLUSH FLV",
+      "pack_size": "12",
+      "old_price": 25.99,
+      "new_price": 23.99,
+      "price_change": -2.0,
+      "price_ratio_pct": 92.3
+    },
+    {
+      "product": "MOLSON CANADIAN",
+      "pack_size": "12",
+      "old_price": 27.99,
+      "new_price": 25.99,
+      "price_change": -2.0,
+      "price_ratio_pct": 92.85
+    },
+    {
+      "product": "VIZZY SELT VP V2",
+      "pack_size": "12",
+      "old_price": 26.99,
+      "new_price": 24.99,
+      "price_change": -2.0,
+      "price_ratio_pct": 92.59
+    },
+    {
+      "product": "MAD TOM IPA",
+      "pack_size": "12",
+      "old_price": 29.59,
+      "new_price": 27.59,
+      "price_change": -2.0,
+      "price_ratio_pct": 93.24
+    },
+    {
+      "product": "MUSKOKA CREAM ALE",
+      "pack_size": "12",
+      "old_price": 29.09,
+      "new_price": 27.09,
+      "price_change": -2.0,
+      "price_ratio_pct": 93.12
+    },
+    {
+      "product": "MUSKOKA VENTURE PACK",
+      "pack_size": "12",
+      "old_price": 27.19,
+      "new_price": 25.19,
+      "price_change": -2.0,
+      "price_ratio_pct": 92.64
+    },
+    {
+      "product": "OLD MILWAUKEE ICE",
+      "pack_size": "18",
+      "old_price": 34.78,
+      "new_price": 32.97,
+      "price_change": -1.81,
+      "price_ratio_pct": 94.8
+    },
+    {
+      "product": "OLD MILWAUKEE ICE",
+      "pack_size": "12",
+      "old_price": 23.49,
+      "new_price": 21.98,
+      "price_change": -1.51,
+      "price_ratio_pct": 93.57
+    },
+    {
+      "product": "COLLECTIVE LAGER",
+      "pack_size": "12",
+      "old_price": 24.99,
+      "new_price": 23.49,
+      "price_change": -1.5,
+      "price_ratio_pct": 94.0
+    },
+    {
+      "product": "COLT 45",
+      "pack_size": "4",
+      "old_price": 14.34,
+      "new_price": 12.99,
+      "price_change": -1.35,
+      "price_ratio_pct": 90.59
+    },
+    {
+      "product": "COLLECTIVE RANSACK",
+      "pack_size": "6",
+      "old_price": 19.99,
+      "new_price": 18.99,
+      "price_change": -1.0,
+      "price_ratio_pct": 95.0
+    },
+    {
+      "product": "GONE FISHIN LIGHT",
+      "pack_size": "6",
+      "old_price": 15.99,
+      "new_price": 14.99,
+      "price_change": -1.0,
+      "price_ratio_pct": 93.75
+    },
+    {
+      "product": "LONGHORN LAGER",
+      "pack_size": "6",
+      "old_price": 16.99,
+      "new_price": 15.99,
+      "price_change": -1.0,
+      "price_ratio_pct": 94.11
+    },
+    {
+      "product": "ROUGH STOCK IPA",
+      "pack_size": "6",
+      "old_price": 17.99,
+      "new_price": 16.99,
+      "price_change": -1.0,
+      "price_ratio_pct": 94.44
+    },
+    {
+      "product": "CREEMORE LIGHT LAGER",
+      "pack_size": "6",
+      "old_price": 17.69,
+      "new_price": 16.69,
+      "price_change": -1.0,
+      "price_ratio_pct": 94.35
+    },
+    {
+      "product": "MOOSEHEAD LAGER",
+      "pack_size": "12",
+      "old_price": 23.89,
+      "new_price": 22.89,
+      "price_change": -1.0,
+      "price_ratio_pct": 95.81
+    },
+    {
+      "product": "OLD MILWAUKEE ICE",
+      "pack_size": "6",
+      "old_price": 11.99,
+      "new_price": 10.99,
+      "price_change": -1.0,
+      "price_ratio_pct": 91.66
+    },
+    {
+      "product": "HELLES LAGER",
+      "pack_size": "6",
+      "old_price": 17.49,
+      "new_price": 16.49,
+      "price_change": -1.0,
+      "price_ratio_pct": 94.28
+    },
+    {
+      "product": "COLT 45",
+      "pack_size": "2",
+      "old_price": 7.35,
+      "new_price": 6.5,
+      "price_change": -0.85,
+      "price_ratio_pct": 88.44
+    },
+    {
+      "product": "NA HAZY PALE ALE",
+      "pack_size": "4",
+      "old_price": 8.45,
+      "new_price": 7.7,
+      "price_change": -0.75,
+      "price_ratio_pct": 91.12
+    },
+    {
+      "product": "COLT 45",
+      "pack_size": "1",
+      "old_price": 3.76,
+      "new_price": 3.25,
+      "price_change": -0.51,
+      "price_ratio_pct": 86.44
+    },
+    {
+      "product": "HELLES LAGER",
+      "pack_size": "1",
+      "old_price": 3.15,
+      "new_price": 2.85,
+      "price_change": -0.3,
+      "price_ratio_pct": 90.48
+    },
+    {
+      "product": "HACKER WEISSBIER",
+      "pack_size": "1",
+      "old_price": 2.83,
+      "new_price": 2.57,
+      "price_change": -0.26,
+      "price_ratio_pct": 90.81
+    },
+    {
+      "product": "PAULANER HELL MUNCH",
+      "pack_size": "1",
+      "old_price": 2.43,
+      "new_price": 2.18,
+      "price_change": -0.25,
+      "price_ratio_pct": 89.71
+    },
+    {
+      "product": "PAULANER WEISSBIER",
+      "pack_size": "1",
+      "old_price": 3.01,
+      "new_price": 2.76,
+      "price_change": -0.25,
+      "price_ratio_pct": 91.69
+    },
+    {
+      "product": "TYSKIE GRONIE",
+      "pack_size": "1",
+      "old_price": 2.49,
+      "new_price": 2.34,
+      "price_change": -0.15,
+      "price_ratio_pct": 93.98
+    },
+    {
+      "product": "GROLSCH",
+      "pack_size": "1",
+      "old_price": 2.45,
+      "new_price": 2.3,
+      "price_change": -0.15,
+      "price_ratio_pct": 93.88
+    }
+  ],
+  "end_lto": [
+    {
+      "product": "STOCKYARDS LAGER",
+      "pack_size": "1",
+      "old_price": 3.14,
+      "new_price": 3.32,
+      "price_change": 0.18,
+      "price_ratio_pct": 105.73
+    },
+    {
+      "product": "ROUGH STOCK IPA",
+      "pack_size": "1",
+      "old_price": 2.99,
+      "new_price": 3.19,
+      "price_change": 0.2,
+      "price_ratio_pct": 106.69
+    },
+    {
+      "product": "HEADSTOCK IPA",
+      "pack_size": "1",
+      "old_price": 3.05,
+      "new_price": 3.3,
+      "price_change": 0.25,
+      "price_ratio_pct": 108.2
+    },
+    {
+      "product": "MUSKOKA SURVIVAL MIX",
+      "pack_size": "6",
+      "old_price": 17.89,
+      "new_price": 18.89,
+      "price_change": 1.0,
+      "price_ratio_pct": 105.59
+    },
+    {
+      "product": "MUSKOKA SURVL MIX 24",
+      "pack_size": "6",
+      "old_price": 17.89,
+      "new_price": 18.89,
+      "price_change": 1.0,
+      "price_ratio_pct": 105.59
+    },
+    {
+      "product": "PAULANER HELL MUNCH",
+      "pack_size": "4",
+      "old_price": 8.56,
+      "new_price": 9.56,
+      "price_change": 1.0,
+      "price_ratio_pct": 111.68
+    },
+    {
+      "product": "PAULANER PILS",
+      "pack_size": "4",
+      "old_price": 9.49,
+      "new_price": 10.49,
+      "price_change": 1.0,
+      "price_ratio_pct": 110.54
+    },
+    {
+      "product": "PAULANER WEISSBIER",
+      "pack_size": "4",
+      "old_price": 10.68,
+      "new_price": 11.68,
+      "price_change": 1.0,
+      "price_ratio_pct": 109.36
+    },
+    {
+      "product": "PBR LIGHT",
+      "pack_size": "6",
+      "old_price": 10.99,
+      "new_price": 11.99,
+      "price_change": 1.0,
+      "price_ratio_pct": 109.1
+    },
+    {
+      "product": "SAPPORO 0.0%",
+      "pack_size": "6",
+      "old_price": 11.29,
+      "new_price": 12.29,
+      "price_change": 1.0,
+      "price_ratio_pct": 108.86
+    },
+    {
+      "product": "BAVARIA 8.6",
+      "pack_size": "4",
+      "old_price": 11.39,
+      "new_price": 12.39,
+      "price_change": 1.0,
+      "price_ratio_pct": 108.78
+    },
+    {
+      "product": "MAD TOM IPA",
+      "pack_size": "6",
+      "old_price": 18.14,
+      "new_price": 19.39,
+      "price_change": 1.25,
+      "price_ratio_pct": 106.89
+    },
+    {
+      "product": "LANDSHARK LAGER",
+      "pack_size": "6",
+      "old_price": 13.49,
+      "new_price": 14.84,
+      "price_change": 1.35,
+      "price_ratio_pct": 110.01
+    },
+    {
+      "product": "LAKER LIGHT",
+      "pack_size": "6",
+      "old_price": 9.99,
+      "new_price": 11.39,
+      "price_change": 1.4,
+      "price_ratio_pct": 114.01
+    },
+    {
+      "product": "BUDWEISER",
+      "pack_size": "12",
+      "old_price": 26.49,
+      "new_price": 27.99,
+      "price_change": 1.5,
+      "price_ratio_pct": 105.66
+    },
+    {
+      "product": "CORONA",
+      "pack_size": "12",
+      "old_price": 26.69,
+      "new_price": 28.19,
+      "price_change": 1.5,
+      "price_ratio_pct": 105.62
+    },
+    {
+      "product": "PBR LIGHT",
+      "pack_size": "12",
+      "old_price": 21.98,
+      "new_price": 23.49,
+      "price_change": 1.51,
+      "price_ratio_pct": 106.87
+    },
+    {
+      "product": "GONE FISHIN LIGHT",
+      "pack_size": "8",
+      "old_price": 18.99,
+      "new_price": 20.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 110.53
+    },
+    {
+      "product": "LONGHORN LAGER",
+      "pack_size": "8",
+      "old_price": 19.99,
+      "new_price": 21.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 110.01
+    },
+    {
+      "product": "ROUGH STOCK IPA",
+      "pack_size": "8",
+      "old_price": 21.99,
+      "new_price": 23.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 109.1
+    },
+    {
+      "product": "BUD LIGHT LEMON LIME",
+      "pack_size": "12",
+      "old_price": 27.99,
+      "new_price": 29.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 107.15
+    },
+    {
+      "product": "BUD LIGHT LIME TIME",
+      "pack_size": "12",
+      "old_price": 23.49,
+      "new_price": 25.49,
+      "price_change": 2.0,
+      "price_ratio_pct": 108.51
+    },
+    {
+      "product": "MIKES HALFER LEM&LAG",
+      "pack_size": "12",
+      "old_price": 28.79,
+      "new_price": 30.79,
+      "price_change": 2.0,
+      "price_ratio_pct": 106.95
+    },
+    {
+      "product": "ARIZONA HARD VARIETY",
+      "pack_size": "12",
+      "old_price": 24.99,
+      "new_price": 26.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 108.0
+    },
+    {
+      "product": "COORS LIGHT",
+      "pack_size": "12",
+      "old_price": 25.99,
+      "new_price": 27.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 107.7
+    },
+    {
+      "product": "COORS ORIGINAL",
+      "pack_size": "12",
+      "old_price": 26.99,
+      "new_price": 28.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 107.41
+    },
+    {
+      "product": "COORS SELT MIXABLES",
+      "pack_size": "12",
+      "old_price": 23.99,
+      "new_price": 25.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 108.34
+    },
+    {
+      "product": "CREEMORE LAGER",
+      "pack_size": "12",
+      "old_price": 31.99,
+      "new_price": 33.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 106.25
+    },
+    {
+      "product": "SIMPLY LIMEADE",
+      "pack_size": "12",
+      "old_price": 24.99,
+      "new_price": 26.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 108.0
+    },
+    {
+      "product": "VIZZY CREAM POP VP",
+      "pack_size": "12",
+      "old_price": 24.99,
+      "new_price": 26.99,
+      "price_change": 2.0,
+      "price_ratio_pct": 108.0
+    },
+    {
+      "product": "MILLER HIGH LIFE",
+      "pack_size": "30",
+      "old_price": 45.49,
+      "new_price": 47.99,
+      "price_change": 2.5,
+      "price_ratio_pct": 105.5
+    },
+    {
+      "product": "MILLER HIGH LIFE",
+      "pack_size": "12",
+      "old_price": 20.99,
+      "new_price": 23.49,
+      "price_change": 2.5,
+      "price_ratio_pct": 111.91
+    },
+    {
+      "product": "STOCKYARDS LAGER MIX",
+      "pack_size": "6",
+      "old_price": 17.12,
+      "new_price": 19.78,
+      "price_change": 2.66,
+      "price_ratio_pct": 115.54
+    },
+    {
+      "product": "BEAU'S LUG TREAD",
+      "pack_size": "24",
+      "old_price": 60.99,
+      "new_price": 63.99,
+      "price_change": 3.0,
+      "price_ratio_pct": 104.92
+    },
+    {
+      "product": "CORONA",
+      "pack_size": "24",
+      "old_price": 47.69,
+      "new_price": 50.69,
+      "price_change": 3.0,
+      "price_ratio_pct": 106.29
+    },
+    {
+      "product": "CRACKED CANOE",
+      "pack_size": "24",
+      "old_price": 49.99,
+      "new_price": 52.99,
+      "price_change": 3.0,
+      "price_ratio_pct": 106.0
+    },
+    {
+      "product": "MOOSEHEAD LAGER",
+      "pack_size": "24",
+      "old_price": 49.99,
+      "new_price": 52.99,
+      "price_change": 3.0,
+      "price_ratio_pct": 106.0
+    },
+    {
+      "product": "SAPPORO",
+      "pack_size": "24",
+      "old_price": 47.69,
+      "new_price": 50.69,
+      "price_change": 3.0,
+      "price_ratio_pct": 106.29
+    },
+    {
+      "product": "MILLER HIGH LIFE",
+      "pack_size": "24",
+      "old_price": 41.89,
+      "new_price": 44.99,
+      "price_change": 3.1,
+      "price_ratio_pct": 107.4
+    },
+    {
+      "product": "ASAHI SUPER DRY",
+      "pack_size": "24",
+      "old_price": 45.29,
+      "new_price": 49.29,
+      "price_change": 4.0,
+      "price_ratio_pct": 108.83
+    },
+    {
+      "product": "BEAU'S LUG TREAD",
+      "pack_size": "24",
+      "old_price": 45.99,
+      "new_price": 49.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 108.7
+    },
+    {
+      "product": "MIKES HALFER LEM&LAG",
+      "pack_size": "24",
+      "old_price": 53.99,
+      "new_price": 57.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 107.41
+    },
+    {
+      "product": "MILL ST ORGANIC LAG",
+      "pack_size": "24",
+      "old_price": 44.49,
+      "new_price": 48.49,
+      "price_change": 4.0,
+      "price_ratio_pct": 108.99
+    },
+    {
+      "product": "COORS SELT SPLASH",
+      "pack_size": "24",
+      "old_price": 43.99,
+      "new_price": 47.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 109.09
+    },
+    {
+      "product": "ALPINE LAGER",
+      "pack_size": "24",
+      "old_price": 40.99,
+      "new_price": 44.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 109.76
+    },
+    {
+      "product": "CRACKED CANOE",
+      "pack_size": "24",
+      "old_price": 40.99,
+      "new_price": 44.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 109.76
+    },
+    {
+      "product": "JAMES READY 5.5",
+      "pack_size": "24",
+      "old_price": 40.99,
+      "new_price": 44.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 109.76
+    },
+    {
+      "product": "MOOSEHEAD LAGER",
+      "pack_size": "24",
+      "old_price": 40.99,
+      "new_price": 44.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 109.76
+    },
+    {
+      "product": "MOOSEHEAD LIGHT",
+      "pack_size": "24",
+      "old_price": 40.99,
+      "new_price": 44.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 109.76
+    },
+    {
+      "product": "MUSKOKA CRAFT LAGER",
+      "pack_size": "24",
+      "old_price": 44.49,
+      "new_price": 48.49,
+      "price_change": 4.0,
+      "price_ratio_pct": 108.99
+    },
+    {
+      "product": "MUSKOKA TREAD LIGHT",
+      "pack_size": "24",
+      "old_price": 39.99,
+      "new_price": 43.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 110.0
+    },
+    {
+      "product": "NAUGHTY NEIGHBOUR",
+      "pack_size": "24",
+      "old_price": 61.88,
+      "new_price": 65.88,
+      "price_change": 4.0,
+      "price_ratio_pct": 106.46
+    },
+    {
+      "product": "NICKEL BROOK LAGER",
+      "pack_size": "24",
+      "old_price": 53.0,
+      "new_price": 57.0,
+      "price_change": 4.0,
+      "price_ratio_pct": 107.55
+    },
+    {
+      "product": "STEAM WHISTLE",
+      "pack_size": "24",
+      "old_price": 45.99,
+      "new_price": 49.99,
+      "price_change": 4.0,
+      "price_ratio_pct": 108.7
+    },
+    {
+      "product": "COORS ORIGINAL",
+      "pack_size": "24",
+      "old_price": 53.89,
+      "new_price": 57.99,
+      "price_change": 4.1,
+      "price_ratio_pct": 107.61
+    },
+    {
+      "product": "BUSCH LIGHT",
+      "pack_size": "30",
+      "old_price": 43.49,
+      "new_price": 47.99,
+      "price_change": 4.5,
+      "price_ratio_pct": 110.35
+    },
+    {
+      "product": "MOLSON CANADIAN",
+      "pack_size": "28",
+      "old_price": 38.99,
+      "new_price": 43.49,
+      "price_change": 4.5,
+      "price_ratio_pct": 111.54
+    },
+    {
+      "product": "BEAU'S LUG TREAD",
+      "pack_size": "48",
+      "old_price": 110.99,
+      "new_price": 115.99,
+      "price_change": 5.0,
+      "price_ratio_pct": 104.5
+    },
+    {
+      "product": "PERONI",
+      "pack_size": "24",
+      "old_price": 44.99,
+      "new_price": 49.99,
+      "price_change": 5.0,
+      "price_ratio_pct": 111.11
+    },
+    {
+      "product": "GONE FISHIN LIGHT",
+      "pack_size": "24",
+      "old_price": 53.99,
+      "new_price": 58.99,
+      "price_change": 5.0,
+      "price_ratio_pct": 109.26
+    },
+    {
+      "product": "LONGHORN LAGER",
+      "pack_size": "24",
+      "old_price": 54.99,
+      "new_price": 59.99,
+      "price_change": 5.0,
+      "price_ratio_pct": 109.09
+    },
+    {
+      "product": "HEINEKEN NV",
+      "pack_size": "24",
+      "old_price": 44.99,
+      "new_price": 49.99,
+      "price_change": 5.0,
+      "price_ratio_pct": 111.11
+    },
+    {
+      "product": "BUD LIGHT",
+      "pack_size": "30",
+      "old_price": 45.99,
+      "new_price": 50.99,
+      "price_change": 5.0,
+      "price_ratio_pct": 110.87
+    },
+    {
+      "product": "BUD LIGHT LEMON LIME",
+      "pack_size": "24",
+      "old_price": 52.49,
+      "new_price": 57.49,
+      "price_change": 5.0,
+      "price_ratio_pct": 109.53
+    },
+    {
+      "product": "BUD LIGHT LIME TIME",
+      "pack_size": "24",
+      "old_price": 44.99,
+      "new_price": 49.99,
+      "price_change": 5.0,
+      "price_ratio_pct": 111.11
+    },
+    {
+      "product": "STELLA ARTOIS",
+      "pack_size": "24",
+      "old_price": 44.99,
+      "new_price": 49.99,
+      "price_change": 5.0,
+      "price_ratio_pct": 111.11
+    },
+    {
+      "product": "COORS LIGHT",
+      "pack_size": "30",
+      "old_price": 45.99,
+      "new_price": 50.99,
+      "price_change": 5.0,
+      "price_ratio_pct": 110.87
+    },
+    {
+      "product": "HEINEKEN SILVER",
+      "pack_size": "24",
+      "old_price": 44.99,
+      "new_price": 50.69,
+      "price_change": 5.7,
+      "price_ratio_pct": 112.67
+    },
+    {
+      "product": "MILLER LITE",
+      "pack_size": "30",
+      "old_price": 45.99,
+      "new_price": 51.99,
+      "price_change": 6.0,
+      "price_ratio_pct": 113.05
+    },
+    {
+      "product": "ROUGH STOCK IPA",
+      "pack_size": "24",
+      "old_price": 62.99,
+      "new_price": 69.99,
+      "price_change": 7.0,
+      "price_ratio_pct": 111.11
+    },
+    {
+      "product": "MUSKOKA DETOUR",
+      "pack_size": "48",
+      "old_price": 86.99,
+      "new_price": 94.99,
+      "price_change": 8.0,
+      "price_ratio_pct": 109.2
+    },
+    {
+      "product": "BEAU'S LUG TREAD",
+      "pack_size": "48",
+      "old_price": 84.79,
+      "new_price": 94.79,
+      "price_change": 10.0,
+      "price_ratio_pct": 111.79
+    },
+    {
+      "product": "PABST BLUE RIBBON",
+      "pack_size": "60",
+      "old_price": 80.99,
+      "new_price": 90.99,
+      "price_change": 10.0,
+      "price_ratio_pct": 112.35
+    },
+    {
+      "product": "STEAM WHISTLE",
+      "pack_size": "48",
+      "old_price": 82.99,
+      "new_price": 92.99,
+      "price_change": 10.0,
+      "price_ratio_pct": 112.05
+    }
+  ],
+  "total_products": 182,
+  "categorization_summary": {
+    "licensee_changes_count": 12,
+    "new_skus_count": 0,
+    "permanent_changes_count": 30,
+    "begin_lto_count": 66,
+    "end_lto_count": 74
+  },
+  "analysis_date": "2025-11-16 12:56:06"
+}

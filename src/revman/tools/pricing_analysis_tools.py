@@ -308,23 +308,24 @@ class AnomalyDetectionInput(BaseModel):
 class AnomalyDetectionTool(BaseTool):
     name: str = "Price Anomaly Detector"
     description: str = """
-    Identifies SKUs with statistically significant price changes by comparing forecasted change
-    against historical volatility. Returns top 10 SKUs with highest statistical significance
-    (measured in standard deviations from historical mean).
+    Identifies the top 10 SKUs with most significant price changes by comparing forecasted change
+    against historical volatility. Always returns exactly 10 SKUs ranked by statistical significance
+    (measured in standard deviations from historical mean), regardless of threshold.
     Reads forecast results from the JSON file created by PriceForecastingTool.
     """
     args_schema: type[BaseModel] = AnomalyDetectionInput
 
     def _run(self, forecasts_file_path: str = "data/output/price_forecasts.json", threshold_sigma: float = 1.5) -> str:
         """
-        Detect anomalies in forecasted price changes.
+        Detect the top 10 SKUs with most significant forecasted price changes.
 
         Args:
             forecasts_file_path: Path to JSON file from PriceForecastingTool
-            threshold_sigma: Minimum number of standard deviations to flag as anomaly
+            threshold_sigma: (Deprecated - no longer used for filtering) Previously used as minimum threshold
 
         Returns:
-            JSON string with top 10 notable SKUs ranked by statistical significance
+            JSON string with top 10 SKUs ranked by statistical significance (z-score).
+            Always returns exactly 10 SKUs regardless of threshold value.
         """
         try:
             # Read forecast results from file
@@ -358,23 +359,22 @@ class AnomalyDetectionTool(BaseTool):
                     # Calculate z-score (number of standard deviations from mean)
                     z_score = abs((forecasted_change - historical_mean) / historical_std)
 
-                    # Only include if exceeds threshold
-                    if z_score >= threshold_sigma:
-                        anomalies.append({
-                            'sku': sku,
-                            'brand': forecast.get('brand', 'Unknown'),
-                            'pack_size': forecast.get('pack_size'),
-                            'pack_volume_ml': forecast.get('pack_volume_ml'),
-                            'pack_type': forecast.get('pack_type', 'Unknown'),
-                            'current_price': round(current_price, 2),
-                            'forecasted_price': round(forecasted_price, 2),
-                            'price_change_dollars': round(forecasted_price - current_price, 2),
-                            'forecasted_change_pct': round(forecasted_change, 2),
-                            'historical_mean_change_pct': round(historical_mean, 2),
-                            'historical_std_change_pct': round(historical_std, 2),
-                            'z_score': round(z_score, 2),
-                            'significance': f"{z_score:.1f}σ"
-                        })
+                    # Add all SKUs with valid z-scores (no threshold filtering)
+                    anomalies.append({
+                        'sku': sku,
+                        'brand': forecast.get('brand', 'Unknown'),
+                        'pack_size': forecast.get('pack_size'),
+                        'pack_volume_ml': forecast.get('pack_volume_ml'),
+                        'pack_type': forecast.get('pack_type', 'Unknown'),
+                        'current_price': round(current_price, 2),
+                        'forecasted_price': round(forecasted_price, 2),
+                        'price_change_dollars': round(forecasted_price - current_price, 2),
+                        'forecasted_change_pct': round(forecasted_change, 2),
+                        'historical_mean_change_pct': round(historical_mean, 2),
+                        'historical_std_change_pct': round(historical_std, 2),
+                        'z_score': round(z_score, 2),
+                        'significance': f"{z_score:.1f}σ"
+                    })
 
             # Sort by z-score (most significant first) and take top 10
             anomalies.sort(key=lambda x: x['z_score'], reverse=True)
@@ -400,4 +400,141 @@ class AnomalyDetectionTool(BaseTool):
         except Exception as e:
             return json.dumps({
                 "error": f"Error detecting anomalies: {str(e)}"
+            })
+
+
+class PriceCategorizationInput(BaseModel):
+    """Input schema for PriceCategorizationTool"""
+    file_path: str = Field(..., description="Path to the price change Excel file (formula Excel) with columns: Product Name, Pack Size, Type of Sale, Old Price, New Price")
+
+
+class PriceCategorizationTool(BaseTool):
+    name: str = "Price Categorizer"
+    description: str = """
+    Reads price change data from Excel file and categorizes all products into 5 categories:
+    1. Licensee Changes (Type of Sale = "TBS - Licensee")
+    2. New SKUs (Type of Sale = "New SKU")
+    3. Permanent Changes (TBS - Retail Price with 96% <= price_ratio <= 104%)
+    4. Begin LTO (TBS - Retail Price with price_ratio < 96%)
+    5. End LTO (TBS - Retail Price with price_ratio > 104%)
+
+    Returns all products pre-categorized in a flat JSON structure.
+    """
+    args_schema: type[BaseModel] = PriceCategorizationInput
+
+    def _run(self, file_path: str) -> str:
+        """
+        Categorize all price changes based on Type of Sale and price ratios.
+
+        Args:
+            file_path: Path to the Excel file with price change data
+
+        Returns:
+            JSON string containing all products organized by category
+        """
+        try:
+            # Validate file path exists
+            if not Path(file_path).exists():
+                raise FileNotFoundError(f"Price change file not found: {file_path}")
+
+            # Read Excel file - skip first 7 rows (TBS report structure)
+            df = pd.read_excel(file_path, skiprows=7)
+
+            # Clean column names (remove whitespace, newlines)
+            df.columns = df.columns.str.strip().str.replace('\n', ' ')
+
+            # Remove completely empty rows
+            df = df.dropna(how='all')
+
+            # Ensure required columns exist
+            required_cols = ['Product Name', 'Pack Size', 'Type of Sale', 'Old Price', 'New Price']
+            missing_cols = [col for col in required_cols if col not in df.columns]
+            if missing_cols:
+                return json.dumps({
+                    "error": f"Missing required columns: {missing_cols}",
+                    "available_columns": list(df.columns)
+                })
+
+            # Initialize category lists
+            licensee_changes = []
+            new_skus = []
+            permanent_changes = []
+            begin_lto = []
+            end_lto = []
+
+            # Process each row
+            for idx, row in df.iterrows():
+                product = str(row['Product Name']).strip()
+                pack_size = str(row['Pack Size']).strip()
+                type_of_sale = str(row['Type of Sale']).strip()
+                old_price = safe_float(row['Old Price'])
+                new_price = safe_float(row['New Price'])
+
+                # Create product entry
+                product_entry = {
+                    'product': product,
+                    'pack_size': pack_size,
+                    'old_price': round(old_price, 2),
+                    'new_price': round(new_price, 2),
+                    'price_change': round(new_price - old_price, 2)
+                }
+
+                # Categorize based on Type of Sale
+                if type_of_sale == "TBS - Licensee":
+                    licensee_changes.append(product_entry)
+
+                elif type_of_sale == "New SKU":
+                    new_skus.append(product_entry)
+
+                elif type_of_sale == "TBS – Retail Price" or type_of_sale == "TBS - Retail Price":
+                    # Calculate price ratio percentage: (new_price / old_price) * 100
+                    if old_price > 0:
+                        price_ratio = (new_price / old_price) * 100
+                        product_entry['price_ratio_pct'] = round(price_ratio, 2)
+
+                        # Categorize based on ratio thresholds
+                        if price_ratio < 96:
+                            begin_lto.append(product_entry)
+                        elif price_ratio > 104:
+                            end_lto.append(product_entry)
+                        else:  # 96 <= price_ratio <= 104
+                            permanent_changes.append(product_entry)
+                    else:
+                        # Handle edge case of zero old price
+                        product_entry['price_ratio_pct'] = 0
+                        product_entry['note'] = 'Zero old price - categorized as permanent change'
+                        permanent_changes.append(product_entry)
+
+            # Build result
+            result = {
+                'licensee_changes': licensee_changes,
+                'new_skus': new_skus,
+                'permanent_changes': permanent_changes,
+                'begin_lto': begin_lto,
+                'end_lto': end_lto,
+                'total_products': len(df),
+                'categorization_summary': {
+                    'licensee_changes_count': len(licensee_changes),
+                    'new_skus_count': len(new_skus),
+                    'permanent_changes_count': len(permanent_changes),
+                    'begin_lto_count': len(begin_lto),
+                    'end_lto_count': len(end_lto)
+                },
+                'analysis_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+
+            # Write results to file for agent to read
+            output_dir = Path("data/output")
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_file = output_dir / "price_categories.json"
+
+            with open(output_file, 'w') as f:
+                json.dump(result, f, indent=2)
+
+            return json.dumps(result, indent=2)
+
+        except Exception as e:
+            return json.dumps({
+                "error": f"Error categorizing prices: {str(e)}",
+                "file_path": file_path
             })

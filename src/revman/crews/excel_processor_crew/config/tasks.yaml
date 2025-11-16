@@ -114,10 +114,59 @@ analyze_price_changes:
     Categorize ALL price change data into 5 categories WITHOUT any grouping by brewer.
     Brewer grouping will be handled by the email_builder_crew.
 
-    DATA SOURCE:
-    - Use the parsed data from the parse_excel_file task (available via context)
-    - DO NOT read the Excel file again - all data has already been parsed and is available
-    - All product records with complete column data are available from the previous task
+    ================================================================================================
+    CRITICAL: EXTRACT FORMULA EXCEL FILE PATH FROM PREVIOUS TASK CONTEXT
+    ================================================================================================
+    Before running the PriceCategorizationTool, you MUST extract the file path from the previous task:
+
+    1. Look at the task context from the "generate_formula_excel" task (previous task in the workflow)
+    2. Find the JSON output containing the "output_file" field
+    3. Extract the EXACT file path string from the "output_file" field
+    4. Use that EXACT path as the file_path parameter when calling PriceCategorizationTool
+
+    DO NOT:
+    - Make up a file path
+    - Hardcode a file path like "data/output/TBS_Price_Change_Formula_20250113.xlsx"
+    - Guess the filename based on today's date
+    - Use any path other than the one from the previous task's output
+
+    WHAT TO LOOK FOR IN CONTEXT:
+    The generate_formula_excel task returns JSON like this:
+    {{
+      "success": true,
+      "output_file": "C:/Users/Y946107/OneDrive - Anheuser-Busch InBev/FY25/Personal git repo/RevMan-POC-Crew/revman/data/output/TBS Price Change Summary Report - October 13th'25_formula.xlsx",
+      "output_filename": "TBS Price Change Summary Report - October 13th'25_formula.xlsx",
+      "formulas_added": 150,
+      "message": "Successfully created formula Excel file with 150 formulas"
+    }}
+
+    You need to extract the value of "output_file" which contains the full absolute path to the formula Excel file.
+
+    EXAMPLE:
+    - Find in context: "output_file": "C:/full/path/to/data/output/TBS Price Change Summary Report - October 13th'25_formula.xlsx"
+    - Use in tool call: PriceCategorizationTool(file_path="C:/full/path/to/data/output/TBS Price Change Summary Report - October 13th'25_formula.xlsx")
+
+    ================================================================================================
+
+    STEP 1: USE PRICE CATEGORIZATION TOOL (MANDATORY FIRST STEP)
+    ============================================================
+    - FIRST, use the PriceCategorizationTool to automatically categorize all products
+    - Pass the formula Excel file path extracted from the generate_formula_excel task (see instructions above)
+    - The tool will read the Excel and return ALL products pre-categorized into 5 categories:
+      1. Licensee Changes
+      2. New SKUs
+      3. Permanent Changes
+      4. Begin LTO
+      5. End LTO
+    - The tool automatically calculates price ratios and applies all categorization rules
+    - This ensures ALL products (including End LTO) are correctly categorized
+
+    STEP 2: FORMAT THE PRE-CATEGORIZED DATA
+    ========================================
+    - Take the categorized data from PriceCategorizationTool output
+    - Format each product entry as: "Product PackSize +/-$X.XX to $YY.YY"
+    - Maintain ALL products from each category - DO NOT filter or skip any products
+    - Output as flat JSON with 5 category keys
 
     ================================================================================================
     CATEGORIZATION RULES - PROCESS IN THIS EXACT ORDER:
@@ -205,9 +254,10 @@ analyze_price_changes:
     IMPORTANT NOTES:
     ================================================================================================
     <mandatory>
-    - The percentage calculation (new_price / old_price) * 100 matches Column O in the formula Excel
-    - Column O contains pre-calculated Price Ratio % values - USE THIS COLUMN to determine categories for Rules 3, 4, and 5
-    - You MUST use the PriceCalculatorTool for EVERY product with Type of Sale = "TBS – Retail Price"
+    - The PriceCategorizationTool automatically reads Column O (Price Ratio %) from the formula Excel
+    - All categorization logic is handled by the tool - you just need to format the output
+    - DO NOT manually categorize or calculate ratios - the tool has already done this correctly
+    - Your job is to FORMAT the pre-categorized data into the expected JSON structure
     </mandatory>
 
     <important>

@@ -9,36 +9,35 @@ excel_parser_agent:
     Pack Volume, Pack Size, Old Price, New Price, and Price Change amounts.
 
 data_analyst_agent:
-  role: Price Change Categorization Specialist (NO Grouping)
-  goal: Categorize ALL price changes into 5 flat categories without any brewer grouping
+  role: Price Change Data Formatter (NO Grouping)
+  goal: Format pre-categorized price changes into the required JSON output structure
   backstory: >
-    You are a precise data categorizer. Your job is to put products into the correct category based ONLY on "Type of Sale" field and price percentage.
+    You are a precise data formatter. Your job is SIMPLE and STRAIGHTFORWARD:
 
-    YOUR JOB IS SIMPLE:
-    1. Find ALL products with Type of Sale = "TBS - Licensee" → Put in "LICENSEE CHANGES" (ALL 12 products)
-    2. Find ALL products with Type of Sale = "New SKU" → Put in "NEW SKUs"
-    3. For products with Type of Sale = "TBS – Retail Price":
-       - Calculate: (new_price / old_price) * 100
-       - If result between 96-104: → "Permanent Changes"
-       - If result < 96: → "Begin LTO"
-       - If result > 104: → "End LTO"
+    STEP 1: USE THE PRICECATEGORIZATIONTOOL
+    ========================================
+    - FIRST, call the PriceCategorizationTool with the formula Excel file path
+    - This tool automatically reads the Excel and categorizes ALL products into 5 categories:
+      1. Licensee Changes (Type of Sale = "TBS - Licensee")
+      2. New SKUs (Type of Sale = "New SKU")
+      3. Permanent Changes (TBS - Retail Price with 96% <= ratio <= 104%)
+      4. Begin LTO (TBS - Retail Price with ratio < 96%)
+      5. End LTO (TBS - Retail Price with ratio > 104%)
+    - The tool handles ALL categorization logic - you do NOT need to calculate anything
 
-    CRITICAL: You do NOT group by brewer. You do NOT assign products to LABATT, MOLSON, SLEEMAN, or OTHER.
-    That grouping will be done by the email_builder_crew.
+    STEP 2: FORMAT THE PRE-CATEGORIZED DATA
+    ========================================
+    - Take the categorized products from the tool output
+    - Format each product as: "Product PackSize +/-$X.XX to $YY.YY"
+    - Keep ALL products from each category - DO NOT filter or skip any
+    - Output as FLAT JSON with 5 category keys
 
-    Your output is a FLAT JSON structure with 5 categories only:
-    - "LICENSEE CHANGES" (must have ALL 12 products)
-    - "NEW SKUs"
-    - "Permanent Changes"
-    - "Begin LTO"
-    - "End LTO"
-
-    ABSOLUTE RULES:
-    - NEVER filter any products
-    - NEVER skip any products
-    - NEVER group by brewer
-    - EVERY product with "TBS - Licensee" MUST be in "LICENSEE CHANGES" - no exceptions
-    - If you see 12 licensee products in input, your output MUST have 12 licensee products
+    CRITICAL RULES:
+    - DO NOT group by brewer (LABATT, MOLSON, SLEEMAN, OTHER) - that's done by email_builder_crew
+    - DO NOT skip or filter any products from the tool output
+    - ALL 5 categories MUST be present in output (can be empty array [] if no products)
+    - ESPECIALLY: If tool returns "End LTO" products, they MUST appear in your output
+    - Your ONLY job is formatting - categorization is already done by the tool
 
     Output format: PROPER(Product) PackSize +/-$Change to $NewPrice
     You do NOT add brewer names, business context, or explanations.

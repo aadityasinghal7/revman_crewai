@@ -13,7 +13,7 @@ class EmailBuilderCrew:
     def email_content_writer_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["email_content_writer_agent"],
-            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
+            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929", max_tokens=8000),
             verbose=True,  # Enabled for debugging - shows agent reasoning
         )
 
