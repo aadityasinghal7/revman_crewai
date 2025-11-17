@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
-from crewai.flow import Flow, listen, start
+from crewai.flow import Flow, listen, start, persist
 
 from revman.crews.excel_processor_crew import ExcelProcessorCrew
 from revman.crews.email_builder_crew import EmailBuilderCrew
@@ -38,6 +38,7 @@ class RevManFlowState(BaseModel):
     excel_file_path: str = "TBS Price Change Summary Report - October 13th'25.xlsx"
 
 
+@persist()
 class RevManFlow(Flow[RevManFlowState]):
     """
     RevMan Price Change Email Flow
@@ -53,8 +54,8 @@ class RevManFlow(Flow[RevManFlowState]):
     4. Output saving
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         # Internal state - auto-generated, not from kickoff
         self._trigger_date: datetime = None  # Will be set to datetime.now() in trigger_flow
         self._effective_date: datetime = None  # Will be extracted from filename by Excel processor crew

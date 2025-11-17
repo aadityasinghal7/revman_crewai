@@ -1,7 +1,5 @@
 Subject: TBS Price Change Summary – Effective October 13, 2025
 
----
-
 Dear Team,
 
 Please find below the TBS price changes effective October 13, 2025. This summary includes all price adjustments across our portfolio, organized by brewer and change type.
@@ -13,11 +11,10 @@ LABATT
 
 Begin LTO
 Budweiser 30C -$5.50 to $45.99
-Bud Light 12C -$2.00 to $25.99
-Stella Artois 12C -$2.00 to $32.49
 Modelo Especial Impt 24B -$3.00 to $50.99
 Michelob Ultra 30C -$3.00 to $49.49
-Mill St Organic Lag 24C -$4.00 to $44.99
+Bud Light 12C -$2.00 to $25.99
+Stella Artois 12C -$2.00 to $32.49
 
 End LTO
 Budweiser 12C +$1.50 to $27.99
@@ -38,65 +35,53 @@ Stella Artois 12C -$0.30 to $28.19
 MOLSON
 
 Begin LTO
+Creemore Lager 24C -$5.00 to $42.99
 Coors Original 30C -$4.50 to $48.99
+Mill St Organic Lag 24C -$4.00 to $44.99
 Coors Light 28B -$4.00 to $39.49
 Miller High Life 24B -$4.00 to $35.99
 Miller Lite 24B -$4.00 to $38.99
-Creemore Lager 24C -$5.00 to $42.99
-Heineken Silver 24B -$5.00 to $44.99
-Keiths 28B -$3.00 to $42.99
-Molson Canadian 30C -$3.00 to $47.99
-Molson Canadian 12C -$2.00 to $25.99
-Coors Selt Slush Flv 12C -$2.00 to $23.99
 Arizona H&h Mixer 12C -$2.00 to $24.99
+Coors Selt Slush Flv 12C -$2.00 to $23.99
+Molson Canadian 12C -$2.00 to $25.99
 Vizzy Selt Vp V2 12C -$2.00 to $24.99
-Creemore Light Lager 6C -$1.00 to $16.69
-Hacker Weissbier 1 -$0.26 to $2.57
-Paulaner Hell Munch 1 -$0.25 to $2.18
-Paulaner Weissbier 1 -$0.25 to $2.76
-Tyskie Gronie 1 -$0.15 to $2.34
 Grolsch 1 -$0.15 to $2.30
 
 End LTO
+Arizona Hard Variety 12C +$2.00 to $26.99
 Coors Light 12C +$2.00 to $27.99
 Coors Original 12C +$2.00 to $28.99
 Coors Selt Mixables 12C +$2.00 to $25.99
 Creemore Lager 12C +$2.00 to $33.99
+Simply Limeade 12C +$2.00 to $26.99
+Vizzy Cream Pop Vp 12C +$2.00 to $26.99
 Miller High Life 30C +$2.50 to $47.99
 Miller High Life 12C +$2.50 to $23.49
 Miller High Life 24B +$3.10 to $44.99
+Mill St Organic Lag 24C +$4.00 to $48.49
 Coors Selt Splash 24C +$4.00 to $47.99
-Paulaner Hell Munch 4B +$1.00 to $9.56
-Paulaner Pils 4B +$1.00 to $10.49
-Paulaner Weissbier 4B +$1.00 to $11.68
+Coors Original 24C +$4.00 to $52.99
 
 Permanent Changes
-Molson Canadian 24B -$1.10 to $51.89
+Molson Canadian 24C -$1.10 to $51.89
 Coors Light 24C +$1.10 to $52.99
 
 SLEEMAN
 
 Begin LTO
 Sleeman Clear 2.0 30C -$5.00 to $44.99
-Sleeman Original Lgr 24B -$3.00 to $37.99
-Colt 45 24C -$8.07 to $77.95
-Colt 45 12C -$3.64 to $38.97
-Colt 45 4C -$1.35 to $12.99
-Colt 45 2C -$0.85 to $6.50
-Colt 45 1 -$0.51 to $3.25
+Sleeman Original Lgr 24C -$3.00 to $37.99
+Sapporo 0.0% 6C +$1.00 to $12.29
 
 End LTO
-Sapporo 0.0% 6B +$1.00 to $12.29
 Sapporo 24B +$3.00 to $50.69
-
-Permanent Changes
-Czechvar 24B +$0.89 to $54.47
 
 Other
 
 Begin LTO
 Steam Whistle 48B -$10.00 to $85.99
 Crest Super 24C -$8.85 to $74.82
+Colt 45 24C -$8.07 to $77.95
 Beaus Lug Lite Lager 48C -$8.00 to $71.99
 Muskoka Tread Light 48C -$8.00 to $78.99
 James Ready 5.5 60C -$6.00 to $84.99
@@ -107,11 +92,11 @@ Gone Fishin Light 12C -$4.00 to $26.99
 Longhorn Lager 12C -$4.00 to $27.99
 Rough Stock Ipa 12C -$4.00 to $30.99
 Muskoka Detour 24C -$4.00 to $47.49
-Headstock Ipa 24B -$4.00 to $61.88
-Wicked Awesome Ipa 24B -$4.00 to $61.88
-Steam Whistle 24B -$4.00 to $48.49
+Steam Whistle 24C -$4.00 to $48.49
 Helles Lager 24B -$4.00 to $58.99
+Colt 45 12C -$3.64 to $38.97
 Busch Lager 30C -$3.00 to $44.99
+Keiths 28B -$3.00 to $42.99
 Moosehead Lager 30C -$3.00 to $46.99
 Beaus Lug Lite Lager 12C -$2.00 to $22.49
 Red Baron Light 24C -$2.00 to $33.04
@@ -121,51 +106,60 @@ Muskoka Venture Pack 12C -$2.00 to $25.19
 Old Milwaukee Ice 18C -$1.81 to $32.97
 Old Milwaukee Ice 12C -$1.51 to $21.98
 Collective Lager 12C -$1.50 to $23.49
+Colt 45 4C -$1.35 to $12.99
 Collective Ransack 6C -$1.00 to $18.99
 Gone Fishin Light 6C -$1.00 to $14.99
 Longhorn Lager 6C -$1.00 to $15.99
 Rough Stock Ipa 6C -$1.00 to $16.99
+Creemore Light Lager 6C -$1.00 to $16.69
 Moosehead Lager 12C -$1.00 to $22.89
 Old Milwaukee Ice 6C -$1.00 to $10.99
-Helles Lager 6B -$1.00 to $16.49
+Helles Lager 6C -$1.00 to $16.49
+Colt 45 2C -$0.85 to $6.50
 Na Hazy Pale Ale 4C -$0.75 to $7.70
+Colt 45 1 -$0.51 to $3.25
 Helles Lager 1 -$0.30 to $2.85
+Hacker Weissbier 1 -$0.26 to $2.57
+Paulaner Hell Munch 1 -$0.25 to $2.18
+Paulaner Weissbier 1 -$0.25 to $2.76
+Tyskie Gronie 1 -$0.15 to $2.34
 
 End LTO
 Stockyards Lager 1 +$0.18 to $3.32
 Rough Stock Ipa 1 +$0.20 to $3.19
-Headstock Ipa 1 +$0.25 to $3.30
 Muskoka Survival Mix 6C +$1.00 to $18.89
 Muskoka Survl Mix 24 6C +$1.00 to $18.89
+Paulaner Hell Munch 4C +$1.00 to $9.56
+Paulaner Pils 4C +$1.00 to $10.49
+Paulaner Weissbier 4C +$1.00 to $11.68
 Pbr Light 6C +$1.00 to $11.99
 Bavaria 8.6 4C +$1.00 to $12.39
 Mad Tom Ipa 6C +$1.25 to $19.39
-Landshark Lager 6B +$1.35 to $14.84
+Landshark Lager 6C +$1.35 to $14.84
 Laker Light 6C +$1.40 to $11.39
 Pbr Light 12C +$1.51 to $23.49
 Gone Fishin Light 8C +$2.00 to $20.99
 Longhorn Lager 8C +$2.00 to $21.99
 Rough Stock Ipa 8C +$2.00 to $23.99
 Mikes Halfer Lem&lag 12C +$2.00 to $30.79
-Arizona Hard Variety 12C +$2.00 to $26.99
-Simply Limeade 12C +$2.00 to $26.99
-Vizzy Cream Pop Vp 12C +$2.00 to $26.99
 Stockyards Lager Mix 6C +$2.66 to $19.78
-Beau's Lug Tread 24C +$3.00 to $63.99
+Beau's Lug Tread 24B +$3.00 to $63.99
 Cracked Canoe 24B +$3.00 to $52.99
 Moosehead Lager 24B +$3.00 to $52.99
 Asahi Super Dry 24B +$4.00 to $49.29
 Beau's Lug Tread 24C +$4.00 to $49.99
 Mikes Halfer Lem&lag 24C +$4.00 to $57.99
-Alpine Lager 24B +$4.00 to $44.99
-Cracked Canoe 24B +$4.00 to $44.99
+Alpine Lager 24C +$4.00 to $44.99
+Cracked Canoe 24C +$4.00 to $44.99
 James Ready 5.5 24C +$4.00 to $44.99
-Moosehead Lager 24B +$4.00 to $44.99
-Moosehead Light 24B +$4.00 to $44.99
+Moosehead Lager 24C +$4.00 to $44.99
+Moosehead Light 24C +$4.00 to $44.99
 Muskoka Craft Lager 24C +$4.00 to $48.49
+Muskoka Tread Light 24C +$4.00 to $43.99
+Steam Whistle 24B +$4.00 to $49.99
 
 Permanent Changes
-Old Milwaukee Ice 24B -$1.03 to $43.96
+Old Milwaukee Ice 24C -$1.03 to $43.96
 Cracked Canoe 12C -$0.50 to $27.99
 Moosehead Lager 12C -$0.50 to $27.99
 Alpine Lager 6C -$0.20 to $14.99
@@ -177,9 +171,10 @@ Longhorn Lager 1 +$0.10 to $2.89
 Moosehead Light 1 +$0.10 to $2.69
 James Ready 5.5 15C +$0.50 to $26.49
 James Ready 6.0 15C +$0.50 to $26.49
-Steam Whistle 12B +$0.50 to $28.49
+Steam Whistle 12C +$0.50 to $28.49
 Beau's Lug Tread 6C +$0.70 to $18.29
-Steam Whistle 6B +$0.70 to $18.29
+Steam Whistle 6C +$0.70 to $18.29
+Czechvar 24B +$0.89 to $54.47
 James Ready 5.5 30C +$1.00 to $44.49
 Pbr Light 24C +$1.03 to $44.99
 Moosehead Lager 60C +$2.00 to $97.99
@@ -188,7 +183,6 @@ Steam Whistle 1 +$5.00 to $145.95
 Benediktiner Weiss 24B +$59.82 to $59.82
 
 LICENSEE CHANGES
-
 Heineken Nv 24B -$6.20 to $54.50
 Heineken Silver 24B -$6.20 to $54.50
 Headstock Ipa 24B -$4.00 to $61.88
@@ -203,7 +197,6 @@ Steam Whistle 1 +$5.00 to $145.95
 Delirium Red 1 +$6.24 to $214.16
 
 NEW SKUs
-
 (None this week)
 
 PRICING TREND FORECAST – Next Week
@@ -222,9 +215,9 @@ HEINEKEN SILVER                  24C     $50.69     $51.86     +$1.17 (+2.31%)  
 MAD TOM IPA                      12C     $27.59     $27.23     -$0.36 (-1.32%)  0.7σ
 BUD LIGHT LEMON LIME             12TC    $29.99     $30.41     +$0.42 (+1.40%)  0.7σ
 BEAU'S LUG TREAD                 48TC    $115.99    $117.01    +$1.02 (+0.88%)  0.5σ
-CREEMORE LAGER                   24C     $42.99     $42.36     -$0.63 (-1.46%)  0.5σ
+Creemore Lager                   24C     $42.99     $42.36     -$0.63 (-1.46%)  0.5σ
 
----
+Note: 99 total price anomalies detected using 1.5σ threshold. The above represents the top 10 most statistically significant changes based on historical pricing patterns.
 
 Best regards,
 Revenue Management Team

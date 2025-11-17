@@ -181,6 +181,10 @@ class HistoricalPriceAnalysisTool(BaseTool):
                 "file_path": file_path
             })
 
+    def tool(self):
+        """Return self for CrewAI compatibility"""
+        return self
+
 
 class PriceForecastingInput(BaseModel):
     """Input schema for PriceForecastingTool"""
@@ -295,6 +299,10 @@ class PriceForecastingTool(BaseTool):
                 "error": f"Error forecasting prices: {str(e)}"
             })
 
+    def tool(self):
+        """Return self for CrewAI compatibility"""
+        return self
+
 
 class AnomalyDetectionInput(BaseModel):
     """Input schema for AnomalyDetectionTool"""
@@ -401,6 +409,10 @@ class AnomalyDetectionTool(BaseTool):
             return json.dumps({
                 "error": f"Error detecting anomalies: {str(e)}"
             })
+
+    def tool(self):
+        """Return self for CrewAI compatibility"""
+        return self
 
 
 class PriceCategorizationInput(BaseModel):
@@ -538,3 +550,7 @@ class PriceCategorizationTool(BaseTool):
                 "error": f"Error categorizing prices: {str(e)}",
                 "file_path": file_path
             })
+
+    def tool(self):
+        """Return self for CrewAI compatibility"""
+        return self

@@ -71,6 +71,10 @@ class ExcelReaderTool(BaseTool):
         except Exception as e:
             return f"Error reading Excel file: {str(e)}"
 
+    def tool(self):
+        """Return self for CrewAI compatibility"""
+        return self
+
 
 class DataCleanerInput(BaseModel):
     """Input schema for DataCleanerTool"""
@@ -133,6 +137,10 @@ class DataCleanerTool(BaseTool):
 
         except Exception as e:
             return f"Error cleaning data: {str(e)}"
+
+    def tool(self):
+        """Return self for CrewAI compatibility"""
+        return self
 
 
 class PriceCalculatorInput(BaseModel):
@@ -218,6 +226,10 @@ class PriceCalculatorTool(BaseTool):
 
         except Exception as e:
             return f"Error calculating price change: {str(e)}"
+
+    def tool(self):
+        """Return self for CrewAI compatibility"""
+        return self
 
 
 class FormulaExcelGeneratorInput(BaseModel):
@@ -340,6 +352,10 @@ class FormulaExcelGeneratorTool(BaseTool):
                 "error": f"Error generating formula Excel: {str(e)}"
             }, indent=2)
 
+    def tool(self):
+        """Return self for CrewAI compatibility"""
+        return self
+
 
 class DateExtractorInput(BaseModel):
     """Input schema for DateExtractorTool"""
@@ -428,3 +444,7 @@ class DateExtractorTool(BaseTool):
                 "error": f"Error extracting date: {str(e)}",
                 "message": f"Using fallback date: {current_date.strftime('%B %d, %Y')}"
             }, indent=2)
+
+    def tool(self):
+        """Return self for CrewAI compatibility"""
+        return self

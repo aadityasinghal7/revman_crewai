@@ -32,9 +32,9 @@ class PricingAnalysisCrew:
             config=self.agents_config["pricing_trend_analyst_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
             tools=[
-                HistoricalPriceAnalysisTool(),
-                PriceForecastingTool(),
-                AnomalyDetectionTool(),
+                HistoricalPriceAnalysisTool().tool(),
+                PriceForecastingTool().tool(),
+                AnomalyDetectionTool().tool(),
             ],
             verbose=True,
         )

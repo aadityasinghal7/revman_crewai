@@ -16,7 +16,7 @@ class ExcelProcessorCrew:
         return Agent(
             config=self.agents_config["excel_parser_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            tools=[ExcelReaderTool(), DataCleanerTool(), FormulaExcelGeneratorTool(), DateExtractorTool()],
+            tools=[ExcelReaderTool().tool(), DataCleanerTool().tool(), FormulaExcelGeneratorTool().tool(), DateExtractorTool().tool()],
             verbose=True,  # Enabled for debugging - shows agent reasoning
         )
 
@@ -25,7 +25,7 @@ class ExcelProcessorCrew:
         return Agent(
             config=self.agents_config["data_analyst_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
-            tools=[PriceCalculatorTool(), PriceCategorizationTool()],
+            tools=[PriceCalculatorTool().tool(), PriceCategorizationTool().tool()],
             verbose=True,  # Enabled for debugging - shows agent reasoning
         )
 
