@@ -2,10 +2,10 @@
 name = "revman"
 version = "0.1.0"
 description = "revman using crewAI"
-authors = [{ name = "Your Name", email = "you@example.com" }]
+authors = [{ name = "Aaditya Singhal", email = "aaditya.singhal@anheuser-busch.com" }]
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "crewai[anthropic,tools]==1.2.0",
+    "crewai[anthropic,tools]==1.4.1",
     "pandas>=2.0.0",
     "openpyxl>=3.1.0",
     "python-docx>=1.0.0",
@@ -24,3 +24,6 @@ build-backend = "hatchling.build"
 
 [tool.crewai]
 type = "flow"
+
+[tool.hatch.metadata]
+allow-direct-references = true
