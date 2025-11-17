@@ -2,6 +2,7 @@
 __pycache__/
 lib/
 .DS_Store
+.venv/
 
 # Data folders
 data/input/*         # Ignore input Excel files (may contain sensitive pricing data)
