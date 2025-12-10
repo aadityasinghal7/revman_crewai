@@ -1,33 +1,40 @@
 # RevMan TBS Price Change Automation
+
 ## AI-Powered Workflow Using CrewAI Framework
 
 ---
 
-## Executive Summary
-
 ### The Business Challenge
-Mark from the Revenue Management team manually processes TBS (The Beer Store) weekly price change reports, spending **30-45 minutes each week** on repetitive data processing tasks:
+
+Mark from the Revenue Management team manually processes TBS (The Beer Store) weekly price change reports, spending **~3 hours each week** on repetitive data processing tasks:
+
 - Opening and parsing Excel files with 150-200 product records
 - Applying complex pricing formulas to categorize changes
 - Grouping products by brewer and change type
 - Formatting data into standardized email templates
 - Manual copy-paste operations prone to human error
 
+---
+
 ### The Automated Solution
-This CrewAI-powered workflow automates the entire process, reducing processing time to **under 2 minutes** while eliminating human error and ensuring 100% format consistency.
+
+This CrewAI-powered workflow automates the entire process, reducing processing time to **under 10 minutes** while eliminating human error and ensuring format consistency.
 
 **Business Impact:**
-- **Time Savings**: 95% reduction in processing time (45 min → 2 min)
-- **Error Elimination**: Zero formula errors or miscategorizations
-- **Consistency**: Perfect template adherence every execution
+
+- **Time Savings**: Reduction in processing time (~3 hours → 10 min)
+- **Error Elimination**: Reduced formula errors or miscategorizations
+- **Consistency**: Template adherence
 - **Intelligence**: Historical trend analysis and price forecasting
 - **Focus**: Frees Mark for strategic analysis vs. manual processing
 
 ---
 
-## How the Automation Works
+### How the Automation Works
 
-```
+ 
+How the Automation Works
+
                     ╔═══════════════════════════════════════════════════════════════════╗
                     ║         AUTOMATED TBS PRICE CHANGE EMAIL SUMMARY SYSTEM           ║
                     ║              CrewAI Multi-Agent Orchestration                     ║
@@ -46,7 +53,7 @@ This CrewAI-powered workflow automates the entire process, reducing processing t
         ╚════════════════════════╝                                  ╚═════════════════════════╝
                     │                                                              │
                     │                      ╔═══════════════════════════════════════╩═════════╗
-                    │                      ║            Custom AI Tools (9)                   ║
+                    │                      ║            Custom AI Tools \(9\)                   ║
                     │                      ╠══════════════════════════════════════════════════╣
                     │                      ║ ExcelReader • FormulaGenerator • Categorizer    ║
                     │                      ║ PriceCalculator • HistoricalAnalyzer            ║
@@ -68,27 +75,22 @@ This CrewAI-powered workflow automates the entire process, reducing processing t
                                                    ▼
                                ┌───────────────────────────────────┐
                                │  ✓ PROFESSIONAL EMAIL READY       │
-                               │    Time: <2 minutes               │
-                               │    Accuracy: 100%                 │
+                               │    Time: ~10 minutes              │
+                               │                                   │
                                └───────────────────────────────────┘
-```
+Technical Architecture: Three AI Crews Working parallel and sequential execution
 
----
+Workflow Sequence
 
-## Technical Architecture: Three AI Crews Working in Harmony
-
-### Workflow Sequence
-
-```
                         ┌─────────────────────────────────────┐
                         │  INPUT: TBS Excel Price Report      │
-                        │  (150-200 product records)          │
+                        │  \(150-200 product records\)          │
                         └──────────────┬──────────────────────┘
                                        │
                                        ▼
                         ┌──────────────────────────────────────┐
                         │    ⚙  REVMANFLOW ORCHESTRATOR  ⚙    │
-                        │  (Parallel + Sequential Execution)   │
+                        │  \(Parallel + Sequential Execution\)   │
                         └───────┬─────────────────┬────────────┘
                                 │                 │
                   ┌─────────────┴──────┐          │
@@ -135,9 +137,9 @@ This CrewAI-powered workflow automates the entire process, reducing processing t
                │  • Categorized highlights           │
                │  • Brewer-grouped sections          │
                │  • Price forecasts & anomalies      │
-               │  • Ready to send (<2 minutes)       │
+               │  • Ready to send                    │
                └─────────────────────────────────────┘
-```
+
 
 ---
 
@@ -189,18 +191,19 @@ This CrewAI-powered workflow automates the entire process, reducing processing t
 | **Sections** | Begin LTO, End LTO, Permanent Changes, Licensee Changes, New SKUs, Pricing Trends |
 | **Pack Notation** | C=355mL can, TC=473mL tall can, B=bottle |
 | **Tools Used** | Pure AI language generation (no external tools) |
-| **AI Model** | Claude Sonnet 4.5 (8000 tokens) |
+| **AI Model** | Claude Sonnet 4.5 |
 | **Output** | Plain-text professional email ready for Outlook send |
 
 **Key Capability:** Perfect template adherence while adapting to variable data - no manual formatting needed
 
 ---
 
-## Custom AI Tools: The Intelligence Layer
+### Custom AI Tools: The Intelligence Layer
 
 The workflow leverages **9 specialized AI tools** that act as the "hands" of the AI agents:
 
-### Excel Processing Tools (6)
+#### Excel Processing Tools (6)
+
 - **ExcelReaderTool**: Reads TBS reports with proper structure handling (skip headers)
 - **DataCleanerTool**: Standardizes and normalizes product data
 - **PriceCalculatorTool**: Computes price changes and percentage ratios
@@ -208,16 +211,16 @@ The workflow leverages **9 specialized AI tools** that act as the "hands" of the
 - **DateExtractorTool**: Extracts effective dates from filenames
 - **PriceCategorizationTool**: Categorizes products using 96%-104% ratio thresholds
 
-### Pricing Analysis Tools (3)
+#### Pricing Analysis Tools (3)
+
 - **HistoricalPriceAnalysisTool**: Calculates week-over-week statistics across 7+ years
 - **PriceForecastingTool**: Predicts next week's prices using exponential smoothing
 - **AnomalyDetectionTool**: Ranks changes by statistical significance (z-score)
 
 ---
 
-## Sample Output: The Finished Product
+### Sample Output: The Finished Product
 
-```
 Subject: TBS Price Change Summary – Effective October 13, 2025
 
 Dear Team,
@@ -226,7 +229,7 @@ Please find below the TBS price changes effective October 13, 2025.
 This summary includes all price adjustments across our portfolio,
 organized by brewer and change type.
 
-Highlights (Price Before Tax and Deposit)
+Highlights \(Price Before Tax and Deposit\)
 Note: C = 355mL can, TC = 473mL tall can, B = bottle
 
 LABATT
@@ -244,102 +247,83 @@ Permanent Changes
 Bud Light 28B -$0.50 to $43.49
 
 MOLSON
-[... additional brewer sections ...]
+\[... additional brewer sections ...\]
 
 LICENSEE CHANGES
 Heineken NV 24B -$6.20 to $54.50
 Steam Whistle 24C +$1.00 to $51.99
 
 NEW SKUs
-[... new products ...]
+\[... new products ...\]
 
 PRICING TREND FORECAST – Next Week
-Top 10 Notable Price Changes (Statistically Significant)
+Top 10 Notable Price Changes \(Statistically Significant\)
 
 Based on historical trend analysis. Significance measured in
-standard deviations (σ) from historical patterns.
+standard deviations \(σ\) from historical patterns.
 
 Product           Pack   Current  Forecast  Change          Significance
-Budweiser         24B    $45.99   $48.50   +$2.51 (+5.5%)   2.3σ
-Corona Extra      12C    $28.99   $26.75   -$2.24 (-7.7%)   2.1σ
-[... 8 more SKUs ...]
+Budweiser         24B    $45.99   $48.50   +$2.51 \(+5.5%\)   2.3σ
+Corona Extra      12C    $28.99   $26.75   -$2.24 \(-7.7%\)   2.1σ
+\[... 8 more SKUs ...\]
 
 Best regards,
 Mark Robinson
-```
 
 ---
 
-## Why CrewAI Framework?
+### Key Success Metrics
 
-**Multi-Agent Collaboration:** Three specialized crews work in parallel and sequence, mimicking a team of experts:
-- Excel specialists parse and categorize data
-- Pricing analysts forecast trends and anomalies
-- Content writers format professional communications
-
-**Flexibility:** AI agents adapt to variations in Excel structure, product counts, and pricing patterns without code changes
-
-**Maintainability:** Adding new features (e.g., pricing forecasts) means adding new crews/agents, not rewriting complex logic
-
-**Scalability:** Can extend to other price change reports (LCBO, retail channels) by adding crews
-
-**Observability:** Each crew produces intermediate outputs for validation and debugging
-
----
-
-## Key Success Metrics
-
-| Metric | Before Automation | After Automation | Improvement |
-|--------|-------------------|------------------|-------------|
-| **Processing Time** | 30-45 minutes | <2 minutes | **95% reduction** |
-| **Formula Errors** | Occasional (human error) | Zero | **100% accuracy** |
-| **Format Consistency** | Variable | Perfect | **100% consistency** |
+| Metric | Before Automation | Expected After Automation | Improvement |
+|--------|-------------------|---------------------------|-------------|
+| **Processing Time** | ~3 hours | ~under 10 minutes | **~95% reduction** |
+| **Formula Errors** | Occasional (human error) | Reduced/NIL | To build a dedicated validation agent for assessment |
+| **Format Consistency** | Variable | Consistent | To build a dedicated validation agent for assessment |
 | **Trend Analysis** | Manual, ad-hoc | Automated, statistical | **New capability** |
 | **Price Forecasting** | Not performed | Top 10 weekly insights | **New capability** |
 
 ---
 
-## Future Enhancements
+### Future Enhancements
 
-**Phase 2 - Email Integration:**
-- Auto-trigger on inbox detection ("TBS process" subject line)
+**Email Integration:**
+
+- Auto-trigger on inbox detection
 - Automatic email sending to distribution list
 - Email attachment extraction
+- Factual and format validation
 
-**Phase 3 - Advanced Analytics:**
-- Multi-week trend dashboards
-- Alert system for unusual pricing patterns
-- HTML email formatting with charts
+**Advanced Analytics:**
 
-**Phase 4 - Intelligence Expansion:**
+- Alert system for unusual pricing pattern
+
+**Scope Expansion:**
+
 - Machine learning-based forecasting
-- Competitive price intelligence
-- Cross-channel price optimization recommendations
+- Expand to broader use case scope
+
+**Testing/ validation and architecture decisions:**
+
+- Validation agent for format, consistency, accuracy, correctness of factual data vs input files
+- Variable state management to be 100% pydantic
+- Shift away from File-Based State Management
+- Efficient context/ memory management
 
 ---
 
-## Technical Details
+### Technical Details
 
-**Framework:** CrewAI (Python-based multi-agent orchestration)
-**AI Model:** Anthropic Claude Sonnet 4.5
-**Language:** Python 3.x
-**Key Libraries:** pandas, openpyxl, numpy
-**Deployment:** Local execution (POC phase)
-**Data Storage:** File-based (Excel, JSON, TXT)
-
-**Repository Location:**
-`C:\Users\Y946107\OneDrive - Anheuser-Busch InBev\FY25\Personal git repo\RevMan-POC-Crew\revman\`
+- **Framework:** CrewAI (Python-based multi-agent orchestration)
+- **AI Model:** Anthropic Claude Sonnet 4.5
+- **Language:** Python 3.x
+- **Key Libraries:** pandas, openpyxl, numpy
+- **Deployment:** Local execution (POC phase)
+- **Data Storage:** File-based (Excel, JSON, TXT)
 
 ---
 
-## Conclusion
+### Conclusion
 
 This CrewAI-powered automation demonstrates how **multi-agent AI systems** can transform repetitive business processes into intelligent, self-executing workflows. By combining specialized AI agents with custom tools, the solution not only replicates manual tasks but **enhances them with predictive intelligence** that was previously impractical to perform manually.
 
-The result: **Mark focuses on strategic revenue management decisions while AI handles the mechanical processing.**
-
 ---
-
-*Document Version: 1.0*
-*Last Updated: January 2025*
-*Framework: CrewAI Multi-Agent System*

@@ -5,6 +5,7 @@ Processes Excel price change reports and generates plain text email content in t
 """
 
 import json
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +18,22 @@ from crewai.flow import Flow, listen, start, persist
 from revman.crews.excel_processor_crew import ExcelProcessorCrew
 from revman.crews.email_builder_crew import EmailBuilderCrew
 from revman.crews.pricing_analysis_crew import PricingAnalysisCrew
+
+# Import Pydantic models for type-safe data flow
+from revman.models.pricing import (
+    HistoricalAnalysisResult,
+    ForecastResult,
+    AnomalyDetectionResult,
+)
+
+# Import tools for direct invocation (bypassing unreliable LLM context-passing)
+from revman.tools.pricing_analysis_tools import (
+    HistoricalPriceAnalysisTool,
+    PriceForecastingTool,
+    AnomalyDetectionTool,
+)
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -114,13 +131,100 @@ class RevManFlow(Flow[RevManFlowState]):
         print(f"[OK] Input file validated\n")
 
     @listen(trigger)
+    def pricing_trend_analysis(self):
+        """
+        Run Pricing Analysis using direct tool invocation with data chaining.
+        
+        This bypasses unreliable LLM context-passing by:
+        1. Calling HistoricalPriceAnalysisTool directly
+        2. Passing output to PriceForecastingTool via sku_analysis parameter
+        3. Passing output to AnomalyDetectionTool via forecasts parameter
+        
+        Data flows through Pydantic models for type safety.
+        """
+        print("\n" + "-" * 60)
+        print("[PRICING] Step 2A: Pricing Trend Analysis (Direct Tool Chain)")
+        print("-" * 60)
+
+        try:
+            # Build path to historical data file
+            historical_file_path = INPUT_DIR / "Historical_price_change_summary_report_vF.xlsx"
+
+            if not historical_file_path.exists():
+                print(f"[WARNING] Historical file not found: {historical_file_path}")
+                print("[INFO] Skipping pricing trend analysis")
+                self._pricing_forecast_analysis = {}
+                return
+
+            print(f"[INFO] Analyzing historical data: {historical_file_path}")
+
+            # =================================================================
+            # Step 1: Analyze historical price data
+            # =================================================================
+            print("[STEP 1/3] Running historical price analysis...")
+            historical_tool = HistoricalPriceAnalysisTool()
+            # Use _execute() to get dict directly (not _run() which returns JSON string)
+            historical_result = historical_tool._execute(
+                file_path=str(historical_file_path),
+                save_to_file=False  # No intermediate file needed
+            )
+            
+            # Convert to Pydantic model for type safety
+            historical_data = HistoricalAnalysisResult.from_dict(historical_result)
+            print(f"[OK] Analyzed {historical_data.total_skus} SKUs")
+
+            # =================================================================
+            # Step 2: Generate price forecasts (inject historical data directly)
+            # =================================================================
+            print("[STEP 2/3] Generating price forecasts...")
+            forecast_tool = PriceForecastingTool()
+            # Use _execute() to get dict directly
+            forecast_result = forecast_tool._execute(
+                sku_analysis=historical_result.get('sku_analysis', {}),  # Direct data injection!
+                save_to_file=False  # No intermediate file needed
+            )
+            
+            # Convert to Pydantic model
+            forecast_data = ForecastResult.from_dict(forecast_result)
+            print(f"[OK] Forecasted {forecast_data.total_skus_forecasted} SKUs")
+
+            # =================================================================
+            # Step 3: Detect anomalies (inject forecast data directly)
+            # =================================================================
+            print("[STEP 3/3] Detecting price anomalies...")
+            anomaly_tool = AnomalyDetectionTool()
+            # Use _execute() to get dict directly
+            anomaly_result = anomaly_tool._execute(
+                forecasts=forecast_result.get('forecasts', {}),  # Direct data injection!
+                save_to_file=False  # No intermediate file needed
+            )
+            
+            # Convert to Pydantic model and store
+            anomaly_data = AnomalyDetectionResult.from_dict(anomaly_result)
+            self._pricing_forecast_analysis = anomaly_result
+            
+            num_changes = len(anomaly_data.top_10_notable_changes)
+            print(f"[OK] Identified {num_changes} notable price changes")
+            print(f"[OK] Pricing trend analysis complete (no intermediate files)")
+            print(f"\n[OK] [STEP 2A COMPLETE] Proceeding to Excel processing...\n")
+            import sys
+            sys.stdout.flush()
+
+        except Exception as e:
+            print(f"[ERROR] Error in pricing trend analysis: {str(e)}")
+            print("[INFO] Continuing without pricing forecast data")
+            self._pricing_forecast_analysis = {}
+            import traceback
+            traceback.print_exc()
+
+    @listen(pricing_trend_analysis)
     def process_excel(self):
         """
         Consolidated Excel Processing Step - Run all Excel tasks in single Crew execution
         This allows proper task context chaining for data flow between tasks
         """
         print("\n" + "-" * 60)
-        print("[EXCEL] Step 2: Process Excel File (Consolidated)")
+        print("[EXCEL] Step 2B: Process Excel File (Consolidated)")
         print("-" * 60)
         print("[INFO] Running all Excel processor tasks in single Crew execution")
         print("[INFO] This enables proper task context chaining for data flow")
@@ -215,74 +319,6 @@ class RevManFlow(Flow[RevManFlowState]):
             raise
 
     @listen(process_excel)
-    def pricing_trend_analysis(self):
-        """
-        Run Pricing Analysis Crew
-        - Analyze historical price trends
-        - Forecast next week's prices
-        - Identify top 10 statistically significant changes
-        """
-        print("\n" + "-" * 60)
-        print("[PRICING] Step 2B: Pricing Trend Analysis")
-        print("-" * 60)
-
-        try:
-            # Build path to historical data file
-            historical_file_path = INPUT_DIR / "Historical_price_change_summary_report_vF.xlsx"
-
-            if not historical_file_path.exists():
-                print(f"[WARNING] Historical file not found: {historical_file_path}")
-                print("[INFO] Skipping pricing trend analysis")
-                self._pricing_forecast_analysis = {}
-                return
-
-            print(f"[INFO] Analyzing historical data: {historical_file_path}")
-
-            # Run Pricing Analysis Crew
-            result = (
-                PricingAnalysisCrew()
-                .crew()
-                .kickoff(inputs={
-                    "historical_file_path": str(historical_file_path),
-                })
-            )
-
-            # Read results directly from the file saved by AnomalyDetectionTool
-            # This is more reliable than parsing the crew result which may include LLM commentary
-            anomalies_file = OUTPUT_DIR / "pricing_anomalies.json"
-
-            if anomalies_file.exists():
-                try:
-                    with open(anomalies_file, 'r') as f:
-                        self._pricing_forecast_analysis = json.load(f)
-
-                    # Validate we have top 10 data
-                    if 'top_10_notable_changes' in self._pricing_forecast_analysis:
-                        num_changes = len(self._pricing_forecast_analysis['top_10_notable_changes'])
-                        print(f"[OK] Identified {num_changes} notable price changes")
-                    else:
-                        print(f"[WARNING] No notable changes in anomalies file")
-                        self._pricing_forecast_analysis = {}
-                except (json.JSONDecodeError, IOError) as e:
-                    print(f"[WARNING] Failed to read pricing anomalies file: {str(e)}")
-                    self._pricing_forecast_analysis = {}
-            else:
-                print(f"[WARNING] Anomalies file not found: {anomalies_file}")
-                self._pricing_forecast_analysis = {}
-
-            print(f"[OK] Pricing trend analysis complete")
-            print(f"\n[OK] [STEP 2B COMPLETE] Proceeding to Step 3...\n")
-            import sys
-            sys.stdout.flush()
-
-        except Exception as e:
-            print(f"[ERROR] Error in pricing trend analysis: {str(e)}")
-            print("[INFO] Continuing without pricing forecast data")
-            self._pricing_forecast_analysis = {}
-            import traceback
-            traceback.print_exc()
-
-    @listen(pricing_trend_analysis)
     def email_generation(self):
         """
         Run Email Builder Crew (Crew 2)
@@ -302,6 +338,13 @@ class RevManFlow(Flow[RevManFlowState]):
 
             print(f"[OK] Validated categorized data exists")
             print(f"[INFO] Generating email for effective date: {self._effective_date.strftime('%B %d, %Y')}")
+            
+            # Debug: Show pricing forecast status
+            if self._pricing_forecast_analysis:
+                num_changes = len(self._pricing_forecast_analysis.get('top_10_notable_changes', []))
+                print(f"[INFO] Pricing forecast data: {num_changes} notable changes to include")
+            else:
+                print(f"[INFO] No pricing forecast data available")
 
             # Kick off Email Builder Crew
             result = (

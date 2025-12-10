@@ -17,7 +17,7 @@ class ExcelProcessorCrew:
             config=self.agents_config["excel_parser_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
             tools=[ExcelReaderTool().tool(), DataCleanerTool().tool(), FormulaExcelGeneratorTool().tool(), DateExtractorTool().tool()],
-            verbose=True,  # Enabled for debugging - shows agent reasoning
+            verbose=True,  
         )
 
     @agent
@@ -26,7 +26,7 @@ class ExcelProcessorCrew:
             config=self.agents_config["data_analyst_agent"],
             llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
             tools=[PriceCalculatorTool().tool(), PriceCategorizationTool().tool()],
-            verbose=True,  # Enabled for debugging - shows agent reasoning
+            verbose=True,  
         )
 
     @task
@@ -57,8 +57,8 @@ class ExcelProcessorCrew:
     def crew(self) -> Crew:
         """Creates the Excel Processor crew"""
         return Crew(
-            agents=self.agents,  # Automatically includes all @agent decorated methods
-            tasks=self.tasks,  # Automatically includes all @task decorated methods
+            agents=self.agents,
+            tasks=self.tasks,  
             process=Process.sequential,
-            verbose=True,  # Enabled for debugging
+            verbose=True,
         )

@@ -1,8 +1,13 @@
 analyze_historical_trends:
   description: |
-    Analyze the historical price data file at {historical_file_path} to calculate week-over-week
-    percentage price changes for all SKUs.
+    Analyze the historical price data file to calculate week-over-week percentage price changes for all SKUs.
 
+    ===========================================================================
+    CRITICAL: USE THIS EXACT FILE PATH - DO NOT CHANGE OR MAKE UP A FILENAME
+    ===========================================================================
+    
+    FILE PATH TO USE: {historical_file_path}
+    
     The file contains the following columns:
     - SKU: Product identifier with brand, pack size, volume, and type details
     - BRAND: Brand name
@@ -12,17 +17,26 @@ analyze_historical_trends:
     - Week: Week of the price in the market
     - Price: Price in the market
 
-    INSTRUCTIONS:
-    1. Use the HistoricalPriceAnalysisTool with the exact file path: {historical_file_path}
-    2. Pass the full file path to the tool's file_path parameter
-    3. For each SKU, the tool will calculate week-over-week percentage changes across all historical data
-    4. The tool will compute statistical measures: mean, standard deviation, min, max of price changes
-    5. The tool will capture the latest price and week for each SKU
-    6. Ensure all 108 SKUs are analyzed
-    7. The tool will automatically save results to: data/output/historical_analysis_results.json
+    CORRECT TOOL CALL FORMAT:
+    ```
+    Action: Historical Price Analyzer
+    Action Input: {{"file_path": "{historical_file_path}"}}
+    ```
+    
+    DO NOT:
+    - Make up file names like "historical_prices.xlsx"
+    - Change the file path in any way
+    - Use any path other than the one provided above
+    
+    The tool will:
+    1. Read the Excel file at the provided path
+    2. Calculate week-over-week percentage changes for each SKU
+    3. Compute statistical measures: mean, standard deviation, min, max
+    4. Return latest price and week for each SKU
+    5. Analyze all 108 SKUs
 
-    The historical data spans from 2018 to November 2025, with the last available data
-    being October Week 13.
+    CRITICAL: Return the complete JSON result from the tool. This data will be passed via
+    context to the next task for forecasting.
 
   expected_output: |
     A comprehensive JSON structure containing:
@@ -31,27 +45,43 @@ analyze_historical_trends:
     - Total number of SKUs analyzed (should be 108)
     - Brand, pack size, volume, and type details for each SKU
 
-    This data will be used for forecasting in the next task.
+    This data will be passed via context to the forecasting task.
 
   agent: pricing_trend_analyst_agent
 
 
 forecast_next_week_prices:
   description: |
-    Using the historical trend analysis saved by the previous task, forecast the expected price
-    for each SKU in the next week (Week of 20th, following October Week 13).
+    Using the historical trend analysis from the previous task (available in your context),
+    forecast the expected price for each SKU in the next week.
 
-    INSTRUCTIONS:
-    1. Use the PriceForecastingTool - it will automatically read from: data/output/historical_analysis_results.json
-    2. The tool applies exponential weighted moving average to recent price changes (giving more weight to recent trends)
-    3. The tool will calculate the forecasted price for next week for all 108 SKUs
-    4. The forecasting uses simple trend-based calculation - no complex models
-    5. For each SKU, the tool calculates the forecasted percentage change
-    6. The tool includes both historical statistics and forecasted values in output
-    7. The tool will automatically save results to: data/output/price_forecasts.json
-
-    The forecast uses trend-based calculation that considers recent price movements
-    more heavily than older historical data.
+    ===========================================================================
+    CRITICAL: YOU MUST USE DATA FROM YOUR CONTEXT - DO NOT USE FILE PATHS
+    ===========================================================================
+    
+    The previous task (analyze_historical_trends) has already provided the sku_analysis data
+    in your context. You MUST extract this data and pass it to the PriceForecastingTool.
+    
+    STEP-BY-STEP INSTRUCTIONS:
+    1. Look in your context for the JSON output from the analyze_historical_trends task
+    2. Find the "sku_analysis" key in that JSON data
+    3. Pass this sku_analysis data directly to the PriceForecastingTool using the "sku_analysis" parameter
+    
+    CORRECT TOOL CALL FORMAT:
+    ```
+    Action: Price Forecaster
+    Action Input: {{"sku_analysis": <the sku_analysis dict from your context>}}
+    ```
+    
+    DO NOT:
+    - Use file paths like "historical_prices.xlsx" or "sku_analysis.json"
+    - Try to read files from disk
+    - Make up file names
+    
+    The tool accepts the "sku_analysis" parameter directly - no file reading needed!
+    
+    The forecast uses trend-based calculation with exponential weighted moving average that
+    considers recent price movements more heavily than older historical data.
 
   expected_output: |
     A JSON structure containing forecasts for all SKUs:
@@ -62,9 +92,11 @@ forecast_next_week_prices:
     - Historical mean and standard deviation of price changes
     - Total number of SKUs forecasted (should be 108)
 
-    This forecasted data will be analyzed for anomalies in the next task.
+    This forecasted data will be passed via context to the anomaly detection task.
 
   agent: pricing_trend_analyst_agent
+  context:
+    - analyze_historical_trends
 
 
 identify_notable_changes:
@@ -72,18 +104,36 @@ identify_notable_changes:
     Identify the top 10 SKUs with the most statistically significant price changes by comparing
     the forecasted change against historical volatility patterns.
 
-    INSTRUCTIONS:
-    1. Use the AnomalyDetectionTool - it will automatically read from: data/output/price_forecasts.json
-    2. For each SKU, the tool calculates the z-score: how many standard deviations the forecasted change
-       is from the historical mean change
-    3. The tool calculates z-scores for ALL SKUs and always returns exactly 10 results
-    4. The tool ranks all SKUs by their z-score (statistical significance)
-    5. The tool selects the top 10 SKUs with highest z-scores regardless of threshold value
-    6. The tool includes both price increase and decrease anomalies
+    ===========================================================================
+    CRITICAL: YOU MUST USE DATA FROM YOUR CONTEXT - DO NOT USE FILE PATHS
+    ===========================================================================
+    
+    The previous task (forecast_next_week_prices) has already provided the forecasts data
+    in your context. You MUST extract this data and pass it to the AnomalyDetectionTool.
+    
+    STEP-BY-STEP INSTRUCTIONS:
+    1. Look in your context for the JSON output from the forecast_next_week_prices task
+    2. Find the "forecasts" key in that JSON data
+    3. Pass this forecasts data directly to the AnomalyDetectionTool using the "forecasts" parameter
+    
+    CORRECT TOOL CALL FORMAT:
+    ```
+    Action: Price Anomaly Detector
+    Action Input: {{"forecasts": <the forecasts dict from your context>}}
+    ```
+    
+    DO NOT:
+    - Use file paths like "historical_prices.xlsx" or "price_forecasts.json"
+    - Try to read files from disk
+    - Make up file names
+    
+    The tool accepts the "forecasts" parameter directly - no file reading needed!
+    
+    For each SKU, the tool calculates the z-score: how many standard deviations the forecasted change
+    is from the historical mean change. It returns exactly 10 SKUs ranked by statistical significance.
 
     Focus on identifying changes that are UNEXPECTED based on historical patterns, not just
-    large absolute changes. A SKU with stable historical prices showing even a moderate change
-    may be more significant than a volatile SKU with a large change.
+    large absolute changes.
 
   expected_output: |
     A JSON structure with exactly 10 SKUs, ranked by statistical significance:
@@ -104,3 +154,5 @@ identify_notable_changes:
     This output will be formatted into a table and appended to the price change email.
 
   agent: pricing_trend_analyst_agent
+  context:
+    - forecast_next_week_prices
