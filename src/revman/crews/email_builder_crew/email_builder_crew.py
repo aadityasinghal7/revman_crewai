@@ -4,13 +4,14 @@ from crewai.project import CrewBase, agent, crew, task
 
 
 # Azure OpenAI LLM Configuration
-# Uses CrewAI LLM Connection: SupplyChainAnalytics-GPT-TEST-EastUS2
-# Available models: azure/gpt-4.1, azure/gpt-4.1-mini, azure/gpt-5
+# Uses OpenAI-compatible endpoint with Azure OpenAI
 
 def get_azure_llm(max_tokens: int = 4096) -> LLM:
-    """Create Azure OpenAI LLM instance via CrewAI LLM Connection."""
+    """Create Azure OpenAI LLM instance using OpenAI-compatible format."""
     return LLM(
-        model="azure/gpt-4.1",
+        model="openai/gpt-4.1",
+        api_key=os.getenv("AZURE_API_KEY"),
+        base_url=os.getenv("AZURE_API_BASE"),
         max_tokens=max_tokens,
     )
 
