@@ -17,15 +17,13 @@ from revman.tools import (
 
 
 # Azure OpenAI LLM Configuration
-# Per CrewAI docs: https://docs.crewai.com/concepts/llms#azure
+# Using litellm azure format: azure/<deployment-name>
+# Requires: AZURE_API_KEY, AZURE_API_BASE, AZURE_API_VERSION
 
 def get_azure_llm(max_tokens: int = 4096) -> LLM:
-    """Create Azure OpenAI LLM instance."""
+    """Create Azure OpenAI LLM instance via litellm."""
     return LLM(
         model="azure/gpt-4o",
-        api_key=os.getenv("AZURE_API_KEY"),
-        endpoint=os.getenv("AZURE_ENDPOINT", os.getenv("AZURE_API_BASE")),
-        api_version=os.getenv("AZURE_API_VERSION", "2024-06-01"),
         max_tokens=max_tokens,
     )
 
