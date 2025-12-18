@@ -16,21 +16,14 @@ from revman.tools import (
 )
 
 
-# Azure OpenAI LLM Configuration (using OpenAI-compatible endpoint)
+# Azure OpenAI LLM Configuration
+# Uses CrewAI LLM Connection: SupplyChainAnalytics-GPT-TEST-EastUS2
+# Available models: azure/gpt-4.1, azure/gpt-4.1-mini, azure/gpt-5
+
 def get_azure_llm(max_tokens: int = 4096) -> LLM:
-    """Create Azure OpenAI LLM instance using OpenAI provider format.
-    
-    This uses the openai/ prefix which is natively supported by CrewAI.
-    Azure OpenAI endpoint must be OpenAI-compatible.
-    """
-    azure_base = os.getenv("AZURE_API_BASE", "")
-    api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-08-01-preview")
-    
-    # Format: openai/<deployment-name> with Azure base URL
+    """Create Azure OpenAI LLM instance via CrewAI LLM Connection."""
     return LLM(
-        model="openai/gpt-4o",  # deployment name in Azure
-        api_key=os.getenv("AZURE_API_KEY"),
-        base_url=f"{azure_base.rstrip('/')}/openai/deployments/gpt-4o?api-version={api_version}",
+        model="azure/gpt-4.1",
         max_tokens=max_tokens,
     )
 
