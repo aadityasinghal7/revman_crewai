@@ -4,13 +4,15 @@ from crewai.project import CrewBase, agent, crew, task
 
 
 # Azure OpenAI LLM Configuration
-# Using litellm azure format: azure/<deployment-name>
-# Requires: AZURE_API_KEY, AZURE_API_BASE, AZURE_API_VERSION
+# Explicitly pass credentials from environment variables
 
 def get_azure_llm(max_tokens: int = 4096) -> LLM:
-    """Create Azure OpenAI LLM instance via litellm."""
+    """Create Azure OpenAI LLM instance with explicit credentials."""
     return LLM(
         model="azure/gpt-4o",
+        api_key=os.environ.get("AZURE_API_KEY"),
+        endpoint=os.environ.get("AZURE_ENDPOINT") or os.environ.get("AZURE_API_BASE"),
+        api_version=os.environ.get("AZURE_API_VERSION", "2024-06-01"),
         max_tokens=max_tokens,
     )
 
