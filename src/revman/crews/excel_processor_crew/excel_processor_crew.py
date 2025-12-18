@@ -1,7 +1,19 @@
+import os
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
 from revman.tools import ExcelReaderTool, DataCleanerTool, PriceCalculatorTool, FormulaExcelGeneratorTool, DateExtractorTool, PriceCategorizationTool
+
+# Azure OpenAI LLM Configuration
+def get_azure_llm(max_tokens: int = 4096) -> LLM:
+    """Create Azure OpenAI LLM instance with environment-based configuration."""
+    return LLM(
+        model="azure/gpt-4o",
+        api_key=os.getenv("AZURE_API_KEY"),
+        base_url=os.getenv("AZURE_API_BASE"),
+        api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-08-01-preview"),
+        max_tokens=max_tokens,
+    )
 
 
 @CrewBase
@@ -15,7 +27,7 @@ class ExcelProcessorCrew:
     def excel_parser_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["excel_parser_agent"],
-            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
+            llm=get_azure_llm(),
             tools=[ExcelReaderTool().tool(), DataCleanerTool().tool(), FormulaExcelGeneratorTool().tool(), DateExtractorTool().tool()],
             verbose=True,  
         )
@@ -24,7 +36,7 @@ class ExcelProcessorCrew:
     def data_analyst_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["data_analyst_agent"],
-            llm=LLM(model="anthropic/claude-sonnet-4-5-20250929"),
+            llm=get_azure_llm(),
             tools=[PriceCalculatorTool().tool(), PriceCategorizationTool().tool()],
             verbose=True,  
         )
