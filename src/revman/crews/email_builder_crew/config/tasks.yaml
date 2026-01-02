@@ -5,16 +5,20 @@ write_highlights_content:
     INPUT DATA (provided via inputs):
     - effective_date: {effective_date}
     - price_changes_categorized: {price_changes_categorized}
-    - pricing_forecast_analysis: {pricing_forecast_analysis} (optional - may be empty)
+    - pricing_forecast_analysis: {pricing_forecast_analysis}
+      (Check: if top_10_notable_changes array has items, MUST include forecast section)
 
     INPUT DATA STRUCTURE:
     The input is a FLAT JSON structure with 5 categories (NO brewer grouping yet):
     {{
-      "LICENSEE CHANGES": [...list of all licensee products...],
-      "NEW SKUs": [...list of new SKU products...],
-      "Permanent Changes": [...list of retail products with 96-104% price ratio...],
-      "Begin LTO": [...list of retail products with <96% price ratio...],
-      "End LTO": [...list of retail products with >104% price ratio...]
+      "licensee_changes": [...list of all licensee products...],
+      "new_skus": [...list of new SKU products...],
+      "permanent_changes": [...list of retail products with 96-104% price ratio...],
+      "begin_lto": [...list of retail products with <96% price ratio...],
+      "end_lto": [...list of retail products with >104% price ratio...],
+      "total_products": 108,
+      "effective_date_iso": "2025-10-13",
+      "effective_date_display": "October 13, 2025"
     }}
 
     PRICING FORECAST ANALYSIS DATA STRUCTURE (optional):
@@ -37,13 +41,31 @@ write_highlights_content:
       "threshold_used": 1.5
     }}
 
-    YOUR JOB:
-    1. Take "LICENSEE CHANGES" and "NEW SKUs" - keep them as-is (no grouping)
-    2. Take "Permanent Changes", "Begin LTO", "End LTO" - group these by brewer using hierarchy below
-    3. Build the email output with brewer-grouped sections
-    4. If pricing_forecast_analysis is provided and has "top_10_notable_changes", add a "PRICING TREND FORECAST" section at the end (after NEW SKUs, before closing)
+    ⚠️ CRITICAL PRE-FLIGHT CHECK - DO THIS FIRST ⚠️
+    ===================================================
+    BEFORE you start building the email, check pricing_forecast_analysis:
 
-    BREWER GROUPING RULES (applies ONLY to "Permanent Changes", "Begin LTO", "End LTO"):
+    1. Look for the "top_10_notable_changes" array in pricing_forecast_analysis input
+    2. Count the items: len(top_10_notable_changes)
+
+    IF len(top_10_notable_changes) > 0:
+       ➡️ YOU MUST INCLUDE "PRICING TREND FORECAST – Next Week" section
+       ➡️ This is MANDATORY, not optional
+       ➡️ Position: AFTER "LICENSEE CHANGES", BEFORE closing signature ("Best regards,")
+       ➡️ Failure to include this section when data exists is an ERROR
+
+    IF len(top_10_notable_changes) == 0 OR the key doesn't exist:
+       ➡️ Skip the forecast section entirely
+
+    YOUR JOB:
+    1. Take "licensee_changes" and "new_skus" - keep them as-is (no grouping)
+    2. Take "permanent_changes", "begin_lto", "end_lto" - group these by brewer using hierarchy below
+    3. Build the email output with brewer-grouped sections
+    4. CRITICAL: Check pricing_forecast_analysis for "top_10_notable_changes" array
+       - If array exists AND has at least 1 item: MUST include "PRICING TREND FORECAST" section after NEW SKUs
+       - If array is empty or missing: Skip this section entirely
+
+    BREWER GROUPING RULES (applies ONLY to "permanent_changes", "begin_lto", "end_lto"):
     For each product in these categories, determine which brewer it belongs to:
     - LABATT: Budweiser, Bud Light, Stella Artois, Corona, Modelo, Becks, Hoegaarden, Michelob, Mill St, etc.
     - MOLSON: Coors, Molson Canadian, Miller, Heineken, Creemore, etc.
@@ -78,19 +100,32 @@ write_highlights_content:
        - "LICENSEE CHANGES" section (if applicable) - Type of Sale = TBS - Licensee
        - "NEW SKUs" section (if applicable) - newly added products
 
-    5. Pricing Trend Forecast Section (OPTIONAL - only if pricing_forecast_analysis is provided):
-       - Add this section AFTER "NEW SKUs" and BEFORE the closing signature
-       - Title: "PRICING TREND FORECAST – Next Week"
-       - Subtitle: "Top 10 Notable Price Changes (Statistically Significant)"
-       - Note: "Based on historical trend analysis. Significance measured in standard deviations (σ) from historical patterns."
-       - Format as a simple table showing:
-         * Product and Pack Size
-         * Current price
-         * Forecast price
-         * Change ($ and %)
-         * Significance (σ)
-       - Use aligned columns for readability
-       - Only include if pricing_forecast_analysis contains "top_10_notable_changes"
+    5. ⚠️ MANDATORY: PRICING TREND FORECAST SECTION (IF DATA EXISTS) ⚠️
+       ==================================================================
+
+       REQUIREMENT: You ALREADY checked this in the PRE-FLIGHT CHECK above.
+       If top_10_notable_changes exists with items, this section is REQUIRED.
+
+       ❌ DO NOT SKIP THIS SECTION IF DATA EXISTS ❌
+
+       If len(top_10_notable_changes) > 0:
+         ✅ INCLUDE THIS SECTION - IT IS MANDATORY:
+         - Position: AFTER "LICENSEE CHANGES", BEFORE closing signature
+         - Title: "PRICING TREND FORECAST – Next Week"
+         - Subtitle: "Top 10 Notable Price Changes (Statistically Significant)"
+         - Note: "Based on historical trend analysis. Significance measured in standard deviations (σ) from historical patterns."
+         - Format as a simple table showing:
+           * Product and Pack Size (column width: 32 chars)
+           * Pack Size (7 chars)
+           * Current price (10 chars, format: $XX.XX)
+           * Forecast price (10 chars, format: $XX.XX)
+           * Change in dollars and % (13 chars, format: +$X.XX (+X.X%))
+           * Significance (12 chars, format: X.Xσ)
+         - Use aligned columns for readability
+         - Include ALL items from top_10_notable_changes array
+
+       If len(top_10_notable_changes) == 0 or key doesn't exist:
+         - Skip this section entirely
 
     FORMAT EACH LINE:
     Product PackSize +/-$Amount to $FinalPrice
@@ -185,8 +220,24 @@ write_highlights_content:
     - Properly organized by brewer hierarchy
     - Each product line formatted as: Product PackSize +/-$Amount to $FinalPrice
     - NO business context or commentary (except in pricing forecast section which needs context)
-    - If pricing forecast data is provided, include "PRICING TREND FORECAST" section after NEW SKUs
+    - If pricing forecast top_10_notable_changes array has items, MUST include "PRICING TREND FORECAST" section after NEW SKUs
     - Include professional closing
     - Ready to send directly
+
+    ⚠️ FINAL VALIDATION CHECKLIST BEFORE SUBMITTING OUTPUT ⚠️
+    ===========================================================
+    Before you return your email output, STOP and verify:
+
+    ✓ Step 1: Did you check pricing_forecast_analysis at the beginning?
+    ✓ Step 2: If top_10_notable_changes array had items (len > 0), did you include "PRICING TREND FORECAST – Next Week" section?
+    ✓ Step 3: Is the forecast section positioned AFTER "LICENSEE CHANGES" and BEFORE "Best regards,"?
+    ✓ Step 4: Does the forecast section include ALL items from the top_10_notable_changes array?
+    ✓ Step 5: Is the forecast table formatted with proper columns and alignment?
+
+    ❌ If you answered NO to Step 2 and data exists:
+       STOP! GO BACK and add the "PRICING TREND FORECAST" section NOW before submitting.
+       This is a CRITICAL ERROR if you skip this section when data exists.
+
+    ✅ If you answered YES to all steps: Submit your output.
 
   agent: email_content_writer_agent

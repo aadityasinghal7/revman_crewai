@@ -3,10 +3,11 @@ Pricing Analysis Crew
 
 This crew analyzes historical pricing data, forecasts next week's prices,
 and identifies statistically significant price changes.
+
+Uses SDK task chaining via context parameter for data flow between tasks.
 """
 
-import os
-from crewai import Agent, Crew, Process, Task, LLM
+from crewai import Agent, Crew, LLM, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
 from revman.tools import (
@@ -14,20 +15,7 @@ from revman.tools import (
     PriceForecastingTool,
     AnomalyDetectionTool,
 )
-
-
-# Azure OpenAI LLM Configuration
-# Explicitly pass credentials from environment variables
-
-def get_azure_llm(max_tokens: int = 4096) -> LLM:
-    """Create Azure OpenAI LLM instance with explicit credentials."""
-    return LLM(
-        model="azure/gpt-4o",
-        api_key=os.environ.get("AZURE_API_KEY"),
-        endpoint=os.environ.get("AZURE_ENDPOINT") or os.environ.get("AZURE_API_BASE"),
-        api_version=os.environ.get("AZURE_API_VERSION", "2024-06-01"),
-        max_tokens=max_tokens,
-    )
+from revman.models.pricing import PricingAnalysisOutput
 
 
 @CrewBase
@@ -40,31 +28,49 @@ class PricingAnalysisCrew:
     def pricing_trend_analyst_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["pricing_trend_analyst_agent"],
-            llm=get_azure_llm(),
+            llm=LLM(model="anthropic/claude-sonnet-4-20250514"),
             tools=[
-                HistoricalPriceAnalysisTool().tool(),
-                PriceForecastingTool().tool(),
-                AnomalyDetectionTool().tool()
+                HistoricalPriceAnalysisTool(),
+                PriceForecastingTool(),
+                AnomalyDetectionTool()
             ],
             verbose=True,
         )
 
     @task
     def analyze_historical_trends(self) -> Task:
+        """First task - analyzes historical price data.
+        
+        Note: No output_pydantic - tool returns structured data directly.
+        LLMs struggle to reproduce complex nested JSON like Dict[str, SKUAnalysis].
+        """
         return Task(
             config=self.tasks_config["analyze_historical_trends"],
         )
 
     @task
     def forecast_next_week_prices(self) -> Task:
+        """Second task - uses historical analysis via context parameter.
+        
+        Note: No output_pydantic - tool returns structured data directly.
+        """
         return Task(
             config=self.tasks_config["forecast_next_week_prices"],
+            context=[self.analyze_historical_trends()],
         )
 
     @task
     def identify_notable_changes(self) -> Task:
+        """Third task - uses forecast data via context parameter.
+
+        Uses output_json with simplified model for better LLM reliability.
+        PricingAnalysisOutput uses List[Dict] instead of nested Pydantic models.
+        CrewAI automatically instructs LLM to output valid JSON matching schema.
+        """
         return Task(
             config=self.tasks_config["identify_notable_changes"],
+            context=[self.forecast_next_week_prices()],
+            output_json=PricingAnalysisOutput,  # SDK-optimized flat schema
         )
 
     @crew

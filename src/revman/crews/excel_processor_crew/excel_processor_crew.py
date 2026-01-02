@@ -1,21 +1,20 @@
-import os
-from crewai import Agent, Crew, Process, Task, LLM
+"""
+Excel Processor Crew
+
+Parses and analyzes price change data from Excel files.
+Uses SDK task chaining via context parameter for data flow between tasks.
+"""
+
+from crewai import Agent, Crew, LLM, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-from revman.tools import ExcelReaderTool, DataCleanerTool, PriceCalculatorTool, FormulaExcelGeneratorTool, DateExtractorTool, PriceCategorizationTool
-
-# Azure OpenAI LLM Configuration
-# Explicitly pass credentials from environment variables
-
-def get_azure_llm(max_tokens: int = 4096) -> LLM:
-    """Create Azure OpenAI LLM instance with explicit credentials."""
-    return LLM(
-        model="azure/gpt-4o",
-        api_key=os.environ.get("AZURE_API_KEY"),
-        endpoint=os.environ.get("AZURE_ENDPOINT") or os.environ.get("AZURE_API_BASE"),
-        api_version=os.environ.get("AZURE_API_VERSION", "2024-06-01"),
-        max_tokens=max_tokens,
-    )
+from revman.tools import (
+    ExcelReaderTool,
+    FormulaExcelGeneratorTool,
+    DateExtractorTool,
+    PriceCategorizationTool,
+)
+from revman.models.excel_processing import PriceCategorizationOutput
 
 
 @CrewBase
@@ -29,42 +28,58 @@ class ExcelProcessorCrew:
     def excel_parser_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["excel_parser_agent"],
-            llm=get_azure_llm(),
-            tools=[ExcelReaderTool().tool(), DataCleanerTool().tool(), FormulaExcelGeneratorTool().tool(), DateExtractorTool().tool()],
-            verbose=True,  
+            llm=LLM(model="anthropic/claude-sonnet-4-20250514"),
+            tools=[
+                ExcelReaderTool(),
+                FormulaExcelGeneratorTool(),
+                DateExtractorTool()
+            ],
+            verbose=True,
         )
 
     @agent
     def data_analyst_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["data_analyst_agent"],
-            llm=get_azure_llm(),
-            tools=[PriceCalculatorTool().tool(), PriceCategorizationTool().tool()],
-            verbose=True,  
+            llm=LLM(model="anthropic/claude-sonnet-4-20250514"),
+            tools=[PriceCategorizationTool()],
+            verbose=True,
         )
 
     @task
     def parse_excel_file(self) -> Task:
+        """First task - parses the Excel file. Tool returns structured data."""
         return Task(
             config=self.tasks_config["parse_excel_file"],
         )
 
     @task
     def extract_effective_date(self) -> Task:
+        """Second task - extracts date from filename."""
         return Task(
             config=self.tasks_config["extract_effective_date"],
+            context=[self.parse_excel_file()],
         )
 
     @task
     def generate_formula_excel(self) -> Task:
+        """Third task - generates formula Excel."""
         return Task(
             config=self.tasks_config["generate_formula_excel"],
+            context=[self.parse_excel_file()],
         )
 
     @task
     def analyze_price_changes(self) -> Task:
+        """Fourth task - categorizes price changes.
+
+        Uses output_json with simplified flat model
+        PriceCategorizationOutput uses simple string lists instead of complex nested structures.
+        """
         return Task(
             config=self.tasks_config["analyze_price_changes"],
+            context=[self.generate_formula_excel()],
+            output_json=PriceCategorizationOutput,  # SDK-optimized flat schema
         )
 
     @crew

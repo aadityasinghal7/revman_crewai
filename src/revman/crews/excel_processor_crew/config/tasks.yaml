@@ -34,7 +34,7 @@ parse_excel_file:
 
 extract_effective_date:
   description: |
-    Extract the effective date from the input Excel filename to determine when the price changes take effect.
+    Extract the effective date from the input Excel filename to be used in the output email.
 
     INSTRUCTIONS:
     - Input: {excel_file_path} (the path to the Excel file)
@@ -85,8 +85,8 @@ generate_formula_excel:
     - The tool will automatically extract the month/date from the input filename
     - Save to the output directory specified
 
-    This creates a version of the Excel file that Mark can open to see the formatted price changes,
-    matching his manual workflow of applying formulas in Excel.
+    This creates a version of the Excel file that the user can open to see the formatted price changes,
+    matching their manual workflow of applying formulas in Excel.
 
   expected_output: |
     A JSON response containing:
@@ -178,7 +178,7 @@ analyze_price_changes:
     - NO GROUPING happens at this stage
     - NO FILTERING of any kind
     - Format: "Product PackSize +/-$X.XX to $YY.YY"
-    - Add to "LICENSEE CHANGES" category
+    - Add to "licensee_changes" category
 
     CRITICAL: The following products MUST ALL appear in output:
     1. HEINEKEN NV 24B (-$6.20 to $54.50)
@@ -196,7 +196,7 @@ analyze_price_changes:
 
     VALIDATION:
     - Count products with Type of Sale = "TBS - Licensee" in input: MUST be 12
-    - Count products in your "LICENSEE CHANGES" output: MUST be 12
+    - Count products in your "licensee_changes" output: MUST be 12
     - If counts don't match, you FAILED - re-process until you get all 12
 
     ───────────────────────────────────────────────────────────
@@ -207,11 +207,11 @@ analyze_price_changes:
     - NO GROUPING happens at this stage
     - NO FILTERING of any kind
     - Format: "Product PackSize $YY.YY"
-    - Add to "NEW SKUs" category
+    - Add to "new_skus" category
 
     VALIDATION:
     - Count products with Type of Sale = "New SKU" in input
-    - Count products in your "NEW SKUs" output
+    - Count products in your "new_skus" output
     - Counts MUST match exactly
 
     ───────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ analyze_price_changes:
     - For products where Type of Sale = "TBS – Retail Price"
     - Calculate percentage as: (new_price / old_price) * 100
       (This matches the Column O formula in the generated Excel file)
-    - If percentage is between 96 and 104 (inclusive): → "Permanent Changes" category
+    - If percentage is between 96 and 104 (inclusive): → "permanent_changes" category
     - Format: "Product PackSize +/-$X.XX to $YY.YY"
     - NO GROUPING by brewer at this stage
 
@@ -231,7 +231,7 @@ analyze_price_changes:
     ───────────────────────────────────────────────────────────
     - For products where Type of Sale = "TBS – Retail Price"
     - Calculate percentage as: (new_price / old_price) * 100
-    - If percentage < 96: → "Begin LTO" category
+    - If percentage < 96: → "begin_lto" category
     - Format: "Product PackSize +/-$X.XX to $YY.YY"
     - NO GROUPING by brewer at this stage
 
@@ -242,12 +242,12 @@ analyze_price_changes:
     ───────────────────────────────────────────────────────────
     - For products where Type of Sale = "TBS – Retail Price"
     - Calculate percentage as: (new_price / old_price) * 100
-    - If percentage > 104: → "End LTO" category
+    - If percentage > 104: → "end_lto" category
     - Format: "Product PackSize +/-$X.XX to $YY.YY"
     - NO GROUPING by brewer at this stage
 
     DO NOT SKIP END LTO PRODUCTS! If any products have price ratio > 104% (ratio > 1.04),
-    they MUST be included in the "End LTO" category. This is equally important as all other categories.
+    they MUST be included in the "end_lto" category. This is equally important as all other categories.
     </critical>
 
     ================================================================================================
@@ -276,11 +276,11 @@ analyze_price_changes:
 
   expected_output: |
     IMPORTANT: Output MUST be valid JSON ONLY - no text before or after, no markdown formatting, no code blocks.
-    Start with {{ and end with }}.
+    Start with { and end with }.
 
     FLAT JSON STRUCTURE (NO BREWER GROUPING):
     {{
-      "LICENSEE CHANGES": [
+      "licensee_changes": [
         "Heineken Nv 24B -$6.20 to $54.50",
         "Heineken Silver 24B -$6.20 to $54.50",
         "Headstock Ipa 24B -$4.00 to $61.88",
@@ -294,24 +294,27 @@ analyze_price_changes:
         "Steam Whistle 1 +$5.00 to $145.95",
         "Delirium Red 1 +$6.24 to $214.16"
       ],
-      "NEW SKUs": [
+      "new_skus": [
         "New Product Launch 24C $49.99"
       ],
-      "Permanent Changes": [
+      "permanent_changes": [
         "Bud Light 28B -$0.50 to $43.49",
         "Corona Extra 12C +$0.25 to $24.99",
         "Molson Canadian 24C +$0.50 to $38.99"
       ],
-      "Begin LTO": [
+      "begin_lto": [
         "Budweiser 30C -$5.50 to $45.99",
         "Coors Light 28B -$4.00 to $39.49",
         "Miller High Life 24B -$4.00 to $35.99",
         "Laker 24C -$2.00 to $28.99"
       ],
-      "End LTO": [
+      "end_lto": [
         "Bud Light Lemon Lime 12C +$2.00 to $29.99",
         "Stella Artois 24B +$3.50 to $52.99"
-      ]
+      ],
+      "total_products": 108,
+      "effective_date_iso": "2025-10-13",
+      "effective_date_display": "October 13, 2025"
     }}
 
     <critical>
@@ -319,19 +322,20 @@ analyze_price_changes:
     </critical>
     - NO brewer grouping (LABATT, MOLSON, SLEEMAN, OTHER) in this output
     - Brewer grouping will be done by email_builder_crew
-    - ALL 12 licensee products MUST appear in "LICENSEE CHANGES" list
+    - ALL 12 licensee products MUST appear in "licensee_changes" list
     - ALL products in each category (no filtering)
     - Format: "Product PackSize +/-$Amount to $NewPrice"
     - NO explanatory text, NO business context
     - Output parseable JSON only
+    - MUST include required fields: total_products, effective_date_iso, effective_date_display
 
     <critical>
     ALL 5 CATEGORIES MUST BE PRESENT IN OUTPUT:
-    - ALL 5 category keys must exist in the JSON output: "LICENSEE CHANGES", "NEW SKUs", "Permanent Changes", "Begin LTO", "End LTO"
+    - ALL 5 category keys must exist in the JSON output: "licensee_changes", "new_skus", "permanent_changes", "begin_lto", "end_lto"
     - If no products match a category, the array can be empty: []
     - If products exist matching a category's criteria, that category's array MUST NOT be empty
     - SPECIAL VALIDATION FOR END LTO: If ANY products have price ratio > 104% (new_price/old_price > 1.04),
-      the "End LTO" array MUST contain those products. An empty "End LTO" array when such products exist is a FAILURE.
+      the "end_lto" array MUST contain those products. An empty "end_lto" array when such products exist is a FAILURE.
     </critical>
 
   agent: data_analyst_agent

@@ -33,7 +33,7 @@ analyze_historical_trends:
     2. Calculate week-over-week percentage changes for each SKU
     3. Compute statistical measures: mean, standard deviation, min, max
     4. Return latest price and week for each SKU
-    5. Analyze all 108 SKUs
+    5. Analyze all SKUs
 
     CRITICAL: Return the complete JSON result from the tool. This data will be passed via
     context to the next task for forecasting.
@@ -42,7 +42,7 @@ analyze_historical_trends:
     A comprehensive JSON structure containing:
     - SKU-level analysis with statistical summaries (mean, std dev, all historical changes)
     - Latest price and week for each SKU
-    - Total number of SKUs analyzed (should be 108)
+    - Total number of SKUs analyzed
     - Brand, pack size, volume, and type details for each SKU
 
     This data will be passed via context to the forecasting task.
@@ -90,7 +90,7 @@ forecast_next_week_prices:
     - Forecasted price for next week
     - Forecasted percentage change
     - Historical mean and standard deviation of price changes
-    - Total number of SKUs forecasted (should be 108)
+    - Total number of SKUs forecasted
 
     This forecasted data will be passed via context to the anomaly detection task.
 
@@ -136,22 +136,32 @@ identify_notable_changes:
     large absolute changes.
 
   expected_output: |
-    A JSON structure with exactly 10 SKUs, ranked by statistical significance:
-
-    For each SKU, include:
-    - SKU details (brand, pack size, volume, type)
-    - Current price and forecasted price
-    - Price change in dollars and percentage
-    - Z-score (statistical significance)
-    - Significance label (e.g., "2.3σ")
-    - Historical mean and standard deviation for context
-
-    Also include:
-    - Total number of SKUs analyzed (should always be 10 in the top list)
-    - Threshold used (deprecated parameter, no longer affects results)
-    - Analysis timestamp
-
-    This output will be formatted into a table and appended to the price change email.
+    IMPORTANT: Output ONLY a valid JSON object. Do NOT include any explanatory text, 
+    markdown formatting, or prose before or after the JSON.
+    
+    Required JSON structure:
+    {
+      "top_10_notable_changes": [
+        {
+          "sku": "string",
+          "brand": "string",
+          "pack_size": number or null,
+          "pack_volume_ml": number or null,
+          "pack_type": "string",
+          "current_price": number,
+          "forecasted_price": number,
+          "price_change_dollars": number,
+          "forecasted_change_pct": number,
+          "historical_mean_change_pct": number,
+          "historical_std_change_pct": number,
+          "z_score": number,
+          "significance": "string"
+        }
+      ],
+      "total_anomalies_detected": number,
+      "threshold_used": number,
+      "analysis_date": "string"
+    }
 
   agent: pricing_trend_analyst_agent
   context:

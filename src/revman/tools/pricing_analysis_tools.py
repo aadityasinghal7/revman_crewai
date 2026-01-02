@@ -1,8 +1,8 @@
 """
 Pricing Analysis Tools for Historical Price Trend Analysis and Forecasting.
 
-Migrated to ValidatedBaseTool for production-ready error handling and output validation.
-All tools now fail-fast on errors instead of swallowing them.
+Uses CrewAI SDK's BaseTool
+All tools fail-fast on errors, letting SDK handle exception propagation and retry logic.
 
 This module contains tools for:
 1. Analyzing historical price trends
@@ -24,14 +24,8 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 import numpy as np
 import pandas as pd
+from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
-
-from revman.tools.base_tool import ValidatedBaseTool, ToolValidationError
-from revman.models.pricing import (
-    HistoricalAnalysisResult,
-    ForecastResult,
-    AnomalyDetectionResult,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -105,14 +99,9 @@ class HistoricalPriceAnalysisInput(BaseModel):
     )
 
 
-class HistoricalPriceAnalysisTool(ValidatedBaseTool):
-    """
-    Analyzes historical price data and calculates week-over-week changes.
+class HistoricalPriceAnalysisTool(BaseTool):
+    """Analyzes historical price data and calculates week-over-week changes."""
     
-    Validation:
-    - Requires at least 1 SKU to be analyzed
-    - Fails if required columns are missing
-    """
     name: str = "Historical Price Analyzer"
     description: str = """
     Reads historical price data from Excel file and calculates week-over-week percentage changes
@@ -123,15 +112,11 @@ class HistoricalPriceAnalysisTool(ValidatedBaseTool):
     the default historical file at 'data/input/Historical_price_change_summary_report_vF.xlsx'.
     """
     args_schema: Type[BaseModel] = HistoricalPriceAnalysisInput
-
-    # Validation configuration
-    min_output_items: int = 1
-    required_output_keys: List[str] = ["sku_analysis", "total_skus"]
     
     # Default file path for fallback
     DEFAULT_HISTORICAL_FILE: str = "data/input/Historical_price_change_summary_report_vF.xlsx"
 
-    def _execute(
+    def _run(
         self, 
         file_path: str, 
         output_dir: Optional[str] = None,
@@ -211,7 +196,8 @@ class HistoricalPriceAnalysisTool(ValidatedBaseTool):
                     'max_change_pct': sanitize_float(price_changes.max()),
                     'latest_price': sanitize_float(sku_data.iloc[-1]['Price']),
                     'latest_week': sku_data.iloc[-1]['Week'].strftime('%Y-%m-%d'),
-                    'all_changes': sanitize_list(price_changes.tolist())
+                    # Only return last 3 changes to reduce token count (108 SKUs * 20 changes was too large)
+                    'recent_changes': sanitize_list(price_changes.tolist()[-3:])
                 }
 
         if len(sku_analysis) == 0:
@@ -235,10 +221,6 @@ class HistoricalPriceAnalysisTool(ValidatedBaseTool):
 
         return result
 
-    def _count_items(self, result: Dict[str, Any]) -> int:
-        """Count SKUs analyzed."""
-        return result.get("total_skus", 0)
-
 
 class PriceForecastingInput(BaseModel):
     """Input schema for PriceForecastingTool"""
@@ -260,16 +242,9 @@ class PriceForecastingInput(BaseModel):
     )
 
 
-class PriceForecastingTool(ValidatedBaseTool):
-    """
-    Forecasts next week's price for each SKU using trend-based calculation.
+class PriceForecastingTool(BaseTool):
+    """Forecasts next week's price for each SKU using trend-based calculation."""
     
-    Uses exponential weighted moving average of recent price changes.
-    Accepts either file path or direct data input.
-    
-    Validation:
-    - Requires at least 1 SKU forecast
-    """
     name: str = "Price Forecaster"
     description: str = """
     Forecasts next week's price for each SKU using simple trend-based calculation.
@@ -278,11 +253,7 @@ class PriceForecastingTool(ValidatedBaseTool):
     """
     args_schema: Type[BaseModel] = PriceForecastingInput
 
-    # Validation configuration
-    min_output_items: int = 1
-    required_output_keys: List[str] = ["forecasts", "total_skus_forecasted"]
-
-    def _execute(
+    def _run(
         self, 
         analysis_file_path: Optional[str] = None,
         sku_analysis: Optional[Dict[str, Any]] = None,
@@ -337,20 +308,20 @@ class PriceForecastingTool(ValidatedBaseTool):
             mean_change = safe_float(stats.get('mean_change_pct', 0))
             std_change = safe_float(stats.get('std_change_pct', 0))
 
-            all_changes_raw = stats.get('all_changes', [])
-            all_changes = [safe_float(c) for c in all_changes_raw if c is not None]
+            # Use recent_changes (last 3) or fall back to all_changes for backward compatibility
+            changes_raw = stats.get('recent_changes', stats.get('all_changes', []))
+            changes = [safe_float(c) for c in changes_raw if c is not None]
 
             if latest_price == 0:
                 continue
 
             # Calculate forecasted change using exponential weighted moving average
-            if len(all_changes) >= 3:
-                recent_changes = all_changes[-8:]
-                weights = np.exp(np.linspace(-1, 0, len(recent_changes)))
+            if len(changes) >= 2:
+                weights = np.exp(np.linspace(-1, 0, len(changes)))
                 weights /= weights.sum()
-                forecasted_change_pct = float(np.average(recent_changes, weights=weights))
+                forecasted_change_pct = float(np.average(changes, weights=weights))
             else:
-                forecasted_change_pct = mean_change if len(all_changes) > 0 else 0.0
+                forecasted_change_pct = mean_change if len(changes) > 0 else 0.0
 
             forecasted_price = latest_price * (1 + forecasted_change_pct / 100)
 
@@ -389,10 +360,6 @@ class PriceForecastingTool(ValidatedBaseTool):
 
         return result
 
-    def _count_items(self, result: Dict[str, Any]) -> int:
-        """Count SKUs forecasted."""
-        return result.get("total_skus_forecasted", 0)
-
 
 class AnomalyDetectionInput(BaseModel):
     """Input schema for AnomalyDetectionTool"""
@@ -418,16 +385,9 @@ class AnomalyDetectionInput(BaseModel):
     )
 
 
-class AnomalyDetectionTool(ValidatedBaseTool):
-    """
-    Identifies SKUs with most significant price changes.
+class AnomalyDetectionTool(BaseTool):
+    """Identifies SKUs with most significant price changes."""
     
-    Returns top 10 SKUs ranked by statistical significance (z-score).
-    Accepts either file path or direct data input (direct data preferred).
-    
-    Validation:
-    - Requires at least 1 anomaly detected (or valid analysis)
-    """
     name: str = "Price Anomaly Detector"
     description: str = """
     Identifies the top 10 SKUs with most significant price changes by comparing forecasted change
@@ -437,10 +397,7 @@ class AnomalyDetectionTool(ValidatedBaseTool):
     """
     args_schema: Type[BaseModel] = AnomalyDetectionInput
 
-    # Validation configuration
-    required_output_keys: List[str] = ["top_10_notable_changes", "total_anomalies_detected"]
-
-    def _execute(
+    def _run(
         self, 
         forecasts_file_path: Optional[str] = None,
         forecasts: Optional[Dict[str, Any]] = None,
@@ -540,30 +497,15 @@ class AnomalyDetectionTool(ValidatedBaseTool):
 
         return result
 
-    def _count_items(self, result: Dict[str, Any]) -> int:
-        """Count anomalies detected."""
-        return result.get("total_anomalies_detected", 0)
-
 
 class PriceCategorizationInput(BaseModel):
     """Input schema for PriceCategorizationTool"""
     file_path: str = Field(..., description="Path to the price change Excel file (formula Excel) with columns: Product Name, Pack Size, Type of Sale, Old Price, New Price")
 
 
-class PriceCategorizationTool(ValidatedBaseTool):
-    """
-    Categorizes all products into 5 categories based on Type of Sale and price ratios.
+class PriceCategorizationTool(BaseTool):
+    """Categorizes products into 5 categories based on Type of Sale and price ratios."""
     
-    Categories:
-    1. Licensee Changes (Type of Sale = "TBS - Licensee")
-    2. New SKUs (Type of Sale = "New SKU")
-    3. Permanent Changes (TBS - Retail Price with 96% <= price_ratio <= 104%)
-    4. Begin LTO (TBS - Retail Price with price_ratio < 96%)
-    5. End LTO (TBS - Retail Price with price_ratio > 104%)
-    
-    Validation:
-    - Requires at least 1 product to be categorized
-    """
     name: str = "Price Categorizer"
     description: str = """
     Reads price change data from Excel file and categorizes all products into 5 categories:
@@ -577,11 +519,7 @@ class PriceCategorizationTool(ValidatedBaseTool):
     """
     args_schema: Type[BaseModel] = PriceCategorizationInput
 
-    # Validation configuration
-    min_output_items: int = 1
-    required_output_keys: List[str] = ["total_products", "categorization_summary"]
-
-    def _execute(self, file_path: str) -> Dict[str, Any]:
+    def _run(self, file_path: str) -> Dict[str, Any]:
         """
         Categorize all price changes based on Type of Sale and price ratios.
 
@@ -689,7 +627,3 @@ class PriceCategorizationTool(ValidatedBaseTool):
             },
             'analysis_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
-
-    def _count_items(self, result: Dict[str, Any]) -> int:
-        """Count total products categorized."""
-        return result.get("total_products", 0)

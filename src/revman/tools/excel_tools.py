@@ -1,8 +1,8 @@
 """
 Excel processing tools for parsing TBS Price Change Summary reports.
 
-Migrated to ValidatedBaseTool for production-ready error handling and output validation.
-All tools now fail-fast on errors instead of swallowing them.
+Uses CrewAI SDK's BaseTool for production-ready error handling.
+All tools fail-fast on errors, letting SDK handle exception propagation and retry logic.
 """
 
 import json
@@ -14,9 +14,8 @@ from typing import Any, Dict, List, Type
 
 import openpyxl
 import pandas as pd
+from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
-
-from revman.tools.base_tool import ValidatedBaseTool, ToolValidationError
 
 
 # ============================================================================
@@ -29,7 +28,7 @@ class ExcelReaderInput(BaseModel):
     skip_rows: int = Field(7, description="Number of rows to skip before header (default: 7 for TBS reports)")
 
 
-class ExcelReaderTool(ValidatedBaseTool):
+class ExcelReaderTool(BaseTool):
     """
     Reads Excel files and extracts data from TBS Price Change Summary reports.
     
@@ -49,7 +48,7 @@ class ExcelReaderTool(ValidatedBaseTool):
     min_output_items: int = 1
     required_output_keys: List[str] = ["success", "total_records", "records"]
 
-    def _execute(self, file_path: str, skip_rows: int = 7) -> Dict[str, Any]:
+    def _run(self, file_path: str, skip_rows: int = 7) -> Dict[str, Any]:
         """
         Read and parse Excel file.
 
@@ -93,165 +92,6 @@ class ExcelReaderTool(ValidatedBaseTool):
             "message": f"Successfully parsed {len(records)} records from Excel file"
         }
 
-    def _count_items(self, result: Dict[str, Any]) -> int:
-        """Count parsed records."""
-        return result.get("total_records", 0)
-
-
-class DataCleanerInput(BaseModel):
-    """Input schema for DataCleanerTool"""
-    data: str = Field(..., description="JSON string of data to clean")
-
-
-class DataCleanerTool(ValidatedBaseTool):
-    """
-    Cleans and standardizes data from Excel parsing.
-    
-    Validation:
-    - Requires at least 1 cleaned record
-    """
-    name: str = "Data Cleaner"
-    description: str = (
-        "Cleans and standardizes data. Handles missing values, normalizes text fields, "
-        "converts data types, and removes special characters."
-    )
-    args_schema: Type[BaseModel] = DataCleanerInput
-
-    # Validation configuration
-    min_output_items: int = 1
-    required_output_keys: List[str] = ["success", "cleaned_records", "total_cleaned"]
-
-    def _execute(self, data: str) -> Dict[str, Any]:
-        """
-        Clean and standardize data.
-
-        Args:
-            data: JSON string of data to clean
-
-        Returns:
-            Dict with cleaned data
-
-        Raises:
-            ValueError: If input is invalid JSON or no records to clean
-        """
-        data_dict = json.loads(data)
-        records = data_dict.get("records", [])
-
-        if not records:
-            raise ValueError("No records found in input data to clean")
-
-        cleaned_records = []
-        for record in records:
-            cleaned = {}
-            for key, value in record.items():
-                # Handle None/NaN values
-                if pd.isna(value) or value is None:
-                    cleaned[key] = None
-                    continue
-
-                # Clean text fields
-                if isinstance(value, str):
-                    value = value.strip()
-                    value = ' '.join(value.split())
-
-                cleaned[key] = value
-
-            cleaned_records.append(cleaned)
-
-        return {
-            "success": True,
-            "cleaned_records": cleaned_records,
-            "total_cleaned": len(cleaned_records),
-            "message": f"Successfully cleaned {len(cleaned_records)} records"
-        }
-
-    def _count_items(self, result: Dict[str, Any]) -> int:
-        """Count cleaned records."""
-        return result.get("total_cleaned", 0)
-
-
-class PriceCalculatorInput(BaseModel):
-    """Input schema for PriceCalculatorTool"""
-    old_price: float = Field(..., description="Old price value")
-    new_price: float = Field(..., description="New price value")
-
-
-class PriceCalculatorTool(ValidatedBaseTool):
-    """
-    Calculates price changes and categorizes them based on thresholds.
-    
-    Categories based on ±4% threshold rules:
-    - Permanent Change: 96% ≤ new price ≤ 104% of old price
-    - Begin LTO: new price < 96% of old price (>4% decrease)
-    - End LTO: new price > 104% of old price (>4% increase)
-    """
-    name: str = "Price Calculator"
-    description: str = (
-        "Calculates price changes, percentage changes, and validates pricing data. "
-        "Takes old and new prices and returns change amount, percentage, and direction."
-    )
-    args_schema: Type[BaseModel] = PriceCalculatorInput
-
-    # Validation configuration
-    required_output_keys: List[str] = ["success", "change_amount", "change_percent", "direction"]
-
-    def _execute(self, old_price: float, new_price: float) -> Dict[str, Any]:
-        """
-        Calculate price change statistics.
-
-        Args:
-            old_price: Original price
-            new_price: New price
-
-        Returns:
-            Dict with price change analysis
-
-        Raises:
-            ValueError: If prices are negative
-        """
-        if old_price < 0 or new_price < 0:
-            raise ValueError(f"Prices cannot be negative: old={old_price}, new={new_price}")
-
-        change_amount = new_price - old_price
-
-        if old_price != 0:
-            change_percent = (change_amount / old_price) * 100
-            price_ratio = new_price / old_price
-        else:
-            change_percent = 0
-            price_ratio = 1.0
-
-        # Categorize based on ±4% threshold
-        if price_ratio < 0.96:
-            direction = "decrease"
-            change_type = "Begin LTO"
-            is_significant = True
-        elif price_ratio > 1.04:
-            direction = "increase"
-            change_type = "End LTO"
-            is_significant = True
-        elif 0.96 <= price_ratio <= 1.04:
-            direction = "decrease" if change_amount < 0 else "increase"
-            change_type = "Permanent Change"
-            is_significant = True
-        else:
-            direction = "no change"
-            change_type = "No Change"
-            is_significant = False
-
-        return {
-            "success": True,
-            "old_price": old_price,
-            "new_price": new_price,
-            "change_amount": round(change_amount, 2),
-            "change_percent": round(change_percent, 2),
-            "direction": direction,
-            "suggested_category": change_type,
-            "is_significant": is_significant,
-            "formatted_change": f"${abs(change_amount):.2f}",
-            "sign": "+" if change_amount >= 0 else "-"
-        }
-
 
 class FormulaExcelGeneratorInput(BaseModel):
     """Input schema for FormulaExcelGeneratorTool"""
@@ -261,15 +101,9 @@ class FormulaExcelGeneratorInput(BaseModel):
     formula_column: str = Field("N", description="Column letter where formula should be added (default: N)")
 
 
-class FormulaExcelGeneratorTool(ValidatedBaseTool):
-    """
-    Creates a copy of input Excel with formulas added for price change text generation.
+class FormulaExcelGeneratorTool(BaseTool):
+    """Creates a copy of input Excel with formulas added for price change text generation."""
     
-    Validation:
-    - Requires at least 1 formula to be added
-    - Fails if input file doesn't exist
-    - Fails if no data rows found
-    """
     name: str = "Formula Excel Generator"
     description: str = (
         "Creates a copy of the input Excel file with formulas added to generate formatted price change text. "
@@ -278,11 +112,7 @@ class FormulaExcelGeneratorTool(ValidatedBaseTool):
     )
     args_schema: Type[BaseModel] = FormulaExcelGeneratorInput
 
-    # Validation configuration - MUST add at least 1 formula
-    min_output_items: int = 1
-    required_output_keys: List[str] = ["success", "formulas_added", "output_file"]
-
-    def _execute(
+    def _run(
         self, 
         input_file_path: str, 
         output_dir: str, 
@@ -398,22 +228,15 @@ class FormulaExcelGeneratorTool(ValidatedBaseTool):
             "message": f"Successfully created formula Excel file with {formula_count} formulas"
         }
 
-    def _count_items(self, result: Dict[str, Any]) -> int:
-        """Count formulas added."""
-        return result.get("formulas_added", 0)
-
 
 class DateExtractorInput(BaseModel):
     """Input schema for DateExtractorTool"""
     file_path: str = Field(..., description="Path to the Excel file (date will be extracted from filename)")
 
 
-class DateExtractorTool(ValidatedBaseTool):
-    """
-    Extracts effective date from TBS Price Change Summary Report filename.
+class DateExtractorTool(BaseTool):
+    """Extracts effective date from TBS Price Change Summary Report filename."""
     
-    Expected format: 'TBS Price Change Summary Report - October 13th'25.xlsx'
-    """
     name: str = "Date Extractor from Filename"
     description: str = (
         "Extracts the effective date from TBS Price Change Summary Report filename. "
@@ -422,10 +245,7 @@ class DateExtractorTool(ValidatedBaseTool):
     )
     args_schema: Type[BaseModel] = DateExtractorInput
 
-    # Validation configuration
-    required_output_keys: List[str] = ["effective_date_iso", "effective_date_display"]
-
-    def _execute(self, file_path: str) -> Dict[str, Any]:
+    def _run(self, file_path: str) -> Dict[str, Any]:
         """
         Extract effective date from filename.
 
