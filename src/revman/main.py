@@ -75,8 +75,8 @@ class RevManFlowState(BaseModel):
     email_recipients: Optional[str] = None
     
     # Processing results (populated by flow steps)
-    price_changes_categorized: Optional[Dict[str, Any]] = None
-    pricing_forecast_analysis: Optional[Dict[str, Any]] = None
+    price_changes_categorized: Dict[str, Any] = Field(default_factory=dict)
+    pricing_forecast_analysis: Dict[str, Any] = Field(default_factory=dict)
     email_content: Optional[str] = None
     email_subject: Optional[str] = None
 
