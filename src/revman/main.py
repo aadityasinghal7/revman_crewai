@@ -62,14 +62,6 @@ class RevManFlowState(BaseModel):
     pricing_forecast_analysis: Optional[Dict[str, Any]] = None
     email_content: Optional[str] = None
     email_subject: Optional[str] = None
-    
-    @field_validator('price_changes_categorized', 'pricing_forecast_analysis', mode='before')
-    @classmethod
-    def validate_dict_fields(cls, v):
-        """Convert invalid string inputs to None to handle platform initialization issues"""
-        if isinstance(v, str):
-            return None
-        return v
 
 
 @persist()
