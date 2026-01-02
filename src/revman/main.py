@@ -55,13 +55,13 @@ class RevManFlowState(BaseModel):
     effective_date: Optional[str] = None  # ISO format string
     
     # Configuration
-    email_recipients: List[str] = Field(default_factory=list)
+    email_recipients: Optional[str] = None
     
     # Processing results (populated by flow steps)
     price_changes_categorized: Optional[Dict[str, Any]] = None
     pricing_forecast_analysis: Optional[Dict[str, Any]] = None
-    email_content: str = ""
-    email_subject: str = ""
+    email_content: Optional[str] = None
+    email_subject: Optional[str] = None
 
 
 @persist()
@@ -132,7 +132,6 @@ class RevManFlow(Flow[RevManFlowState]):
         
         - Tasks chain data via context parameter
         - output_pydantic ensures type-safe results
-        - Single Crew kickoff replaces ~60 lines of direct tool calls
         """
         print("\n" + "-" * 60)
         print("[PRICING] Step 2A: Pricing Trend Analysis (SDK Crew)")
@@ -192,7 +191,6 @@ class RevManFlow(Flow[RevManFlowState]):
         """
         Process Excel file using ExcelProcessorCrew with SDK task chaining.
         
-        Refactored to use:
         - SDK task chaining via context parameter
         - output_pydantic for type-safe results
         - Consolidated state instead of instance variables
@@ -214,7 +212,6 @@ class RevManFlow(Flow[RevManFlowState]):
                 })
             )
 
-            # Extract categorized price changes using SDK's json_dict (eliminates 84 lines of regex)
             # With output_json=PriceCategorizationOutput set, CrewAI handles JSON parsing automatically
             if hasattr(result, 'json_dict') and result.json_dict:
                 self.state.price_changes_categorized = result.json_dict
