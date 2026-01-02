@@ -117,28 +117,33 @@ class RevManFlow(Flow[RevManFlowState]):
         else:
             print(f"[OK] Using default configuration")
         
-        # Additional check: if file doesn't exist and path looks absolute, 
+        # Validate input file exists
+        # Initialize excel_path FIRST before any checks
+        excel_path = Path(self.state.excel_file_path)
+
+        # Resolve relative paths to absolute using INPUT_DIR
+        if not excel_path.is_absolute():
+            excel_path = INPUT_DIR / excel_path
+
+        # Additional check: if file doesn't exist and path looks absolute,
         # try extracting just the filename and looking in INPUT_DIR
+        # This handles app.crewai.com cloud paths that may not exist but filename does
         if not excel_path.exists() and self.state.excel_file_path.startswith('/'):
             filename = Path(self.state.excel_file_path).name
             excel_path = INPUT_DIR / filename
-            print(f"[INFO] Absolute path not found, trying: {excel_path}")
-        
+            print(f"[INFO] Absolute path not found, trying filename in INPUT_DIR: {excel_path}")
+
         print(f"  File: {self.state.excel_file_path}")
         print(f"  Date: {self.state.trigger_date}")
         print(f"  Recipients: {', '.join(self.state.email_recipients)}")
 
-        # Validate input file exists
-        excel_path = Path(self.state.excel_file_path)
-        if not excel_path.is_absolute():
-            excel_path = INPUT_DIR / excel_path
-
+        # Final validation - raise error if file still doesn't exist
         if not excel_path.exists():
             raise FileNotFoundError(f"Excel file not found: {excel_path}")
 
         # Update state with resolved absolute path
         self.state.excel_file_path = str(excel_path)
-        print(f"[OK] Input file validated\n")
+        print(f"[OK] Input file validated: {excel_path}\n")
 
     @listen(trigger)
     def pricing_trend_analysis(self):
