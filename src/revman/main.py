@@ -30,6 +30,23 @@ logger = logging.getLogger(__name__)
 # Load environment variables from .env file
 load_dotenv()
 
+# Validate required API keys are properly configured
+anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+if not anthropic_key:
+    raise ValueError(
+        "ANTHROPIC_API_KEY not found in environment. "
+        "Please add it to your .env file. "
+        "Get your API key from: https://console.anthropic.com/settings/keys"
+    )
+
+# Warn if API key has quotes (common .env configuration mistake)
+if anthropic_key.startswith('"') or anthropic_key.startswith("'"):
+    raise ValueError(
+        f"ANTHROPIC_API_KEY appears to have quotes around it: {anthropic_key[:30]}... "
+        "Remove quotes from the API key value in your .env file. "
+        "API keys should NOT be enclosed in quotes."
+    )
+
 # Define file paths using relative path from main.py
 # main.py is at: revman/src/revman/main.py
 # project_root is at: revman/
