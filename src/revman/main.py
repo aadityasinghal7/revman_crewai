@@ -50,6 +50,15 @@ class RevManFlowState(BaseModel):
     # User input - the only field required at kickoff
     excel_file_path: str = "TBS Price Change Summary Report - October 13th'25.xlsx"
     
+    @field_validator('excel_file_path', mode='before')
+    @classmethod
+    def validate_excel_path(cls, v):
+        """Handle various file path formats and typos"""
+        if isinstance(v, str):
+            # Fix common typo: .xslx -> .xlsx
+            v = v.replace('.xslx', '.xlsx')
+        return v
+    
     # Auto-generated timestamps (stored as ISO strings for JSON serialization)
     trigger_date: Optional[str] = None  # ISO format string
     effective_date: Optional[str] = None  # ISO format string
@@ -116,6 +125,13 @@ class RevManFlow(Flow[RevManFlowState]):
             print(f"[OK] Using trigger payload")
         else:
             print(f"[OK] Using default configuration")
+        
+        # Additional check: if file doesn't exist and path looks absolute, 
+        # try extracting just the filename and looking in INPUT_DIR
+        if not excel_path.exists() and self.state.excel_file_path.startswith('/'):
+            filename = Path(self.state.excel_file_path).name
+            excel_path = INPUT_DIR / filename
+            print(f"[INFO] Absolute path not found, trying: {excel_path}")
         
         print(f"  File: {self.state.excel_file_path}")
         print(f"  Date: {self.state.trigger_date}")
