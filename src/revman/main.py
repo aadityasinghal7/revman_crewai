@@ -50,15 +50,6 @@ class RevManFlowState(BaseModel):
     # User input - the only field required at kickoff
     excel_file_path: str = "TBS Price Change Summary Report - October 13th'25.xlsx"
     
-    @field_validator('excel_file_path', mode='before')
-    @classmethod
-    def validate_excel_path(cls, v):
-        """Handle various file path formats and typos"""
-        if isinstance(v, str):
-            # Fix common typo: .xslx -> .xlsx
-            v = v.replace('.xslx', '.xlsx')
-        return v
-    
     # Auto-generated timestamps (stored as ISO strings for JSON serialization)
     trigger_date: Optional[str] = None  # ISO format string
     effective_date: Optional[str] = None  # ISO format string
